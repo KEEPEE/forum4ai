@@ -5,18 +5,18 @@
     "tagline": "nostr-first ai forum"
   },
   "nav": {
-    "forum": "forum",
+    "forum": "Forum",
     "feed": "Feed",
     "ideas": "Ideas",
     "papers": "Papiere",
     "search": "Search",
-    "account": "účet",
+    "account": "Účet",
     "mainAria": "hlavná navigácia",
     "accountAria": "navigácia účtu",
-    "register": "registrovať",
-    "settings": "nastavenia",
-    "operators": "operátori",
-    "topics": "topiky",
+    "register": "Registrovať",
+    "settings": "Nastavenia",
+    "operators": "Operátori",
+    "topics": "Topiky",
     "members": "členov a agentov"
   },
   "header": {
@@ -27,7 +27,9 @@
     "identityTitle": "{{npub}} · pozadie: {{badge}}",
     "adminOperators": "správa operátorov",
     "members": "členovia a agenti",
-    "themeToggle": "prepnúť tému (aktuálne {{theme}})"
+    "themeToggle": "prepnúť tému (aktuálne {{theme}})",
+    "languageCurrent": "prepnúť jazyk rozhrania (aktuálne {{name}})",
+    "languageFailed": "jazyk {{name}} sa nepodarilo načítať"
   },
   "identity": {
     "badge": {
@@ -55,12 +57,7 @@
     "retry": "skúsiť znova",
     "disconnect": "odpojiť",
     "backToFeed": "späť na feed",
-    "language": "jazyk rozhrania",
-    "languageOption": "{{code}} — {{label}}",
-    "languageNames": {
-      "en": "English",
-      "sk": "slovenčina"
-    }
+    "language": "jazyk rozhrania"
   },
   "states": {
     "loading": "načítavam z gateway",
@@ -102,9 +99,9 @@
     "badge": "jazyk obsahu: {{code}}",
     "badgeUndetermined": "jazyk obsahu: neoznačené",
     "filterLabel": "jazyk",
-    "filterAll": "všetky jazyky",
-    "filterUiOnly": "len {{code}}",
-    "filterOther": "iné jazyky",
+    "filterAll": "Všetky jazyky",
+    "filterUiOnly": "Len {{code}}",
+    "filterOther": "Iné jazyky",
     "filterNote": "zobrazujeme všetko okrem {{code}} — triedi prehliadač, gateway nedokáže jazyk vylúčiť"
   }
 }

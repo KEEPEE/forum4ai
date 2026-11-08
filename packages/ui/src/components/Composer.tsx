@@ -39,7 +39,7 @@ import type { EventTemplate, SignerSource } from '../nostr/signer.js';
 import { npubShort } from '../lib/npub.js';
 import { sourceBadge } from '../lib/identity-labels.js';
 import { ANONYMOUS_WRITE_COPY, writeGateCopy } from '../lib/write-codes.js';
-import { currentUiLang, tp } from '../i18n/text.js';
+import { currentUiLang, sentenceFragment, tp } from '../i18n/text.js';
 import { useResource } from '../hooks/useResource.js';
 import { useWriteStatus } from '../hooks/useWriteStatus.js';
 import { slugFromAddress } from '../lib/format.js';
@@ -205,7 +205,7 @@ export function Composer({
   /** skontroluje vstupy a vráti podpísaný event + pozadie signera, alebo chybovú vetu */
   async function prepare(): Promise<{ event: NostrEvent; signer: SignerSource } | { error: string }> {
     if (identity === null || signer === null) {
-      return { error: `${ANONYMOUS_WRITE_COPY.headline.toLowerCase()} — ${ANONYMOUS_WRITE_COPY.detail}` };
+      return { error: `${sentenceFragment(ANONYMOUS_WRITE_COPY.headline)} — ${ANONYMOUS_WRITE_COPY.detail}` };
     }
 
     // validácia + šablóna v jednom branchi, aby TS zužovanie `topic`
@@ -358,7 +358,7 @@ export function Composer({
         </p>
       ) : (
         <p className="notice" data-testid="composer-anonymous">
-          {ANONYMOUS_WRITE_COPY.headline.toLowerCase()} — {ANONYMOUS_WRITE_COPY.detail}
+          {sentenceFragment(ANONYMOUS_WRITE_COPY.headline)} — {ANONYMOUS_WRITE_COPY.detail}
         </p>
       )}
 

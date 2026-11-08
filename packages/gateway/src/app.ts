@@ -98,7 +98,12 @@ export function isHeavyReadPath(pathname: string): boolean {
     // `/fed/state` a `/fed/resync/*` tu nie sú: owner route s lacným
     // SQLite čítaním, ktoré si operátor nevyberá v smyčke.
     pathname === '/fed/events' ||
-    pathname === '/fed/topics'
+    pathname === '/fed/topics' ||
+    // F4AI-37: `GET /nodes` dopytuje relaye (REQ nad kind 30026 + 5), nie je
+    // to lacný read z cache — a je to verejná cesta, ktorú si môže vyberať
+    // hocikto v smyčke.
+    pathname === '/nodes' ||
+    pathname === '/nodes/status'
   );
 }
 
@@ -130,6 +135,24 @@ export interface GatewayOptions {
   corsOrigin?: string;
   /** koľko write relayov musí dať OK, default 1 */
   quorumMinOk?: number;
+  /**
+   * F4AI-39: stav uzla pre `GET /health` (efektívna rola + node pubkey).
+   * Voliteľné — bez neho /health neobsahuje pole `node` vôbec.
+   */
+  nodeStatus?: () => {
+    role: string;
+    announce: boolean;
+    upstreams: string;
+    node_id: string | null;
+    pubkey: string | null;
+  };
+  /**
+   * Node role gating (F4AI-39): `false` = táto inštancia neprijíma zápisy,
+   * `POST /events` odpovie 405. Default true — výhradne to vypína
+   * `NODE_ROLE=seed` (verejný read-only uzol). Inštancia bez nových env sa
+   * správa presne ako pred týmto feature.
+   */
+  acceptWrites?: boolean;
   /** default console.log; testy dajú tichý logger */
   logger?: (line: string) => void;
   /** NIP-98 tolerancia created_at, default ±300 s */
@@ -286,6 +309,7 @@ export function createGatewayApp(options: GatewayOptions): Hono {
   const getRateMax = options.getRateMax ?? GET_RATE_MAX_DEFAULT;
   const getRateWindowMs = options.getRateWindowMs ?? GET_RATE_WINDOW_MS_DEFAULT;
   const writeGate = options.writeGate;
+  const acceptWrites = options.acceptWrites !== false;
   // Phase 6a: federačný hook (undefined = federácia vypnutá)
   const onEventAccepted = options.onEventAccepted;
   const contentLangPolicy = options.contentLang ?? CONTENT_LANG_POLICY_DEFAULT;
@@ -385,10 +409,23 @@ export function createGatewayApp(options: GatewayOptions): Hono {
       // F4AI-14: jasne viditeľný stav search indexu (503 na /search nie je
       // prekvapenie, keď toto hovorí, že index nie je zapnutý)
       ...(options.indexStatus !== undefined ? { index: options.indexStatus() } : {}),
+      // F4AI-39: rola uzla (client|writer|seed|hub) a jeho verejný kľúč.
+      ...(options.nodeStatus !== undefined ? { node: options.nodeStatus() } : {}),
     });
   });
 
   app.post('/events', async (c) => {
+    // F4AI-39: seed je read-only inštancia — zapisuje sa u iných uzlov.
+    if (!acceptWrites) {
+      return c.json(
+        {
+          ok: false,
+          error: 'read-only instance',
+          reasons: ['this node role does not accept writes (NODE_ROLE=seed) — publish through a hub or a writer'],
+        },
+        405,
+      );
+    }
     // A17: strop tela — Content-Length ak existuje (lacná cesta), inak
     // dĺžka prečítaného textu (chunked transfer)
     const declared = Number(c.req.header('content-length') ?? 'NaN');

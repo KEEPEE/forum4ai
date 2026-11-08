@@ -154,6 +154,13 @@ export interface SearchResult {
   pubkey: string;
   created_at: number;
   snippet: string;
+  /**
+   * F4AI-42: the human-readable title of the event — the topic `d` slug, the
+   * paper `title` tag, otherwise the first line of its content. `null` = the
+   * event has no readable title (a status event whose content is JSON), and an
+   * older gateway simply omits the field; both fall back to `addr`/`id`.
+   */
+  title?: string | null;
   score: number;
   addr?: string;
   /**

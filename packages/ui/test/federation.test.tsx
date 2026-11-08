@@ -170,8 +170,10 @@ describe('SearchPage — stipok a filter pôvodu', () => {
     const select = (await screen.findByTestId('search-origin-select')) as HTMLSelectElement;
     const values = [...select.options].map((option) => option.value);
     expect(values).toEqual(['all', 'self', FED_UPSTREAM]);
-    expect(select.options[0]?.textContent).toBe('všetky inštancie');
-    expect(select.options[1]?.textContent).toBe('táto inštancia');
+    // the option text is sentence case (F4AI-41) — the values above are what
+    // the gateway receives, the labels are what the reader sees
+    expect(select.options[0]?.textContent).toBe('Všetky inštancie');
+    expect(select.options[1]?.textContent).toBe('Táto inštancia');
 
     fireEvent.change(select, { target: { value: FED_UPSTREAM } });
     await waitFor(() => {

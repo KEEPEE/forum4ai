@@ -113,6 +113,84 @@ export function minePowNonce(
 }
 
 /**
+ * Yield to the event loop. `setImmediate` where it exists (Node), a
+ * `setTimeout(0)` fallback in a browser bundle — the async miner below must
+ * not block the UI thread while it hashes.
+ */
+function yieldToEventLoop(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const schedule =
+      (globalThis as { setImmediate?: (cb: () => void) => unknown }).setImmediate ??
+      ((cb: () => void) => setTimeout(cb, 0));
+    schedule(resolve);
+  });
+}
+
+/**
+ * Async variant of {@link minePowNonce}: identical search order (deterministic
+ * nonce from 1), but it yields to the event loop every `yieldEvery` hashes.
+ *
+ * A gateway that announces itself (kind 30026) mines at the relay's PoW
+ * difficulty once a minute. At difficulty 18 that is ~262k hashes — a few
+ * hundred milliseconds of pure CPU, which on the main thread would stall
+ * every in-flight request. Yielding keeps the loop responsive without the
+ * cost of booting a worker per heartbeat.
+ */
+export async function minePowNonceAsync(
+  input: PowInput,
+  pubkey: string,
+  powMin: number,
+  maxNonce: number = MAX_POW_NONCE,
+  yieldEvery: number = 20_000,
+): Promise<{ nonce: number; tags: string[][]; id: string; bits: number }> {
+  if (powMin === 0) return minePowNonce(input, pubkey, 0, maxNonce);
+  let nonce = 0;
+  for (;;) {
+    nonce += 1;
+    const tags = [...input.tags.map((tag) => [...tag]), ['nonce', String(nonce), String(powMin)]];
+    const candidate: Omit<UnsignedEvent, 'id' | 'sig'> & { pubkey: string } = {
+      pubkey,
+      kind: input.kind,
+      created_at: input.created_at,
+      tags,
+      content: input.content,
+    };
+    const id = getEventHash(candidate);
+    const bits = countLeadingZeroBits(id);
+    if (bits >= powMin) return { nonce, tags, id, bits };
+    if (nonce >= maxNonce) {
+      throw new RangeError(`minePowNonceAsync: PoW ${String(powMin)} not mined after ${String(nonce)} nonces`);
+    }
+    if (yieldEvery > 0 && nonce % yieldEvery === 0) await yieldToEventLoop();
+  }
+}
+
+/**
+ * Async variant of {@link signWithPow} (same guarantees: verified signature,
+ * id matching the hash, mined difficulty). Use it on any path that must keep
+ * serving requests while it mines.
+ */
+export async function signWithPowAsync(
+  input: PowInput,
+  secretKey: Uint8Array,
+  powMin: number,
+  pubkey: string,
+  yieldEvery: number = 20_000,
+): Promise<Event> {
+  if (powMin <= 0) return signWithPow(input, secretKey, 0, pubkey);
+  const mined = await minePowNonceAsync(input, pubkey, powMin, MAX_POW_NONCE, yieldEvery);
+  const event = finalizeEvent({ ...input, tags: mined.tags }, secretKey);
+  if (!verifyEvent(event)) throw new Error('signWithPowAsync: signature mismatch');
+  if (getEventHash(event) !== event.id) throw new Error('signWithPowAsync: id does not match the hash');
+  if (countLeadingZeroBits(event.id) < powMin) {
+    throw new Error(
+      `signWithPowAsync: mined id has only ${String(countLeadingZeroBits(event.id))} bits (wanted ${String(powMin)})`,
+    );
+  }
+  return event;
+}
+
+/**
  * Vyťaží nonce a podpíše. `powMin = 0` je priama cesta — vtedy `nonce` tag
  * nepridávame vôbec, aby event nebol iný ako pred zavedením PoW.
  *

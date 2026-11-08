@@ -87,6 +87,8 @@ describe('Header', () => {
     renderWithProviders(<Header />, { nsec: null });
     expect(screen.queryByTestId('identity-npub')).toBeNull();
     fireEvent.click(screen.getByTestId('login-open'));
-    expect(screen.getByTestId('login-modal').textContent).toContain('nostr');
+    // the modal offers the extension path — matched case-insensitively, the
+    // tab label is sentence case now (F4AI-41) and the case is not the point
+    expect((screen.getByTestId('login-modal').textContent ?? '').toLowerCase()).toContain('nostr');
   });
 });

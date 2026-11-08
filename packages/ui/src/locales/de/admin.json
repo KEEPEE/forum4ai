@@ -1,0 +1,82 @@
+{
+  "page": {
+    "title": "Operatorverwaltung",
+    "ownerLabel": "Eigentümer:",
+    "summary": "Wartend {{pending}} · aktiv {{active}} · abgelaufen {{lapsed}} · entzogen {{revoked}}",
+    "emptyPrefix": "Es wartet noch niemand — Claims kommen über",
+    "emptySuffix": "als Claim (kind 1055) an."
+  },
+  "states": {
+    "noSignerTitle": "Mit dem Eigentümerschlüssel anmelden",
+    "noSignerDetail": "Freischalten darf nur der Eigentümer der Instanz — er signiert damit per NIP-98. Oben rechts anmelden.",
+    "notOwnerTitle": "Das ist nicht dein Schlüssel",
+    "notOwnerDetail": "Über die Operatorliste entscheidet nur der Eigentümer der Instanz ({{owner}}…). Melde dich mit diesem Schlüssel an oder wirf einen Blick auf",
+    "noOwnerTitle": "Instanz ohne Eigentümer",
+    "noOwnerDetail": "`GATEWAY_OWNER_SK_HEX` ist nicht gesetzt, daher kann niemand freischalten oder entziehen. Operatoren kommen vorerst nur über `forum4ai operator approve` auf dem Server dazu.",
+    "errorTitle": "Die Operatorliste ist nicht verfügbar",
+    "loading": "Operatoren werden geladen…"
+  },
+  "errors": {
+    "OWNER_NOT_CONFIGURED": "Diese Instanz hat keinen konfigurierten Eigentümer, daher kann niemand freischalten",
+    "AUTH_NIP98_INVALID": "Das Gateway hat die NIP-98-Signatur verworfen — sie ist 5 Minuten gültig, erneut versuchen",
+    "NOT_OWNER": "Entscheiden darf nur der Eigentümer der Instanz — mit seinem Schlüssel anmelden",
+    "BAD_REQUEST": "Das Gateway erwartete einen anderen Body (64-hex pubkey, Notiz bis 120 Zeichen)",
+    "BODY_TOO_LARGE": "Die Notiz ist zu lang",
+    "OPERATOR_NOT_FOUND": "Der Operator steht nicht in der Tabelle — Liste neu laden",
+    "loadFailed": "Die Liste konnte nicht geladen werden ({{code}})",
+    "actionFailed": "Die Aktion ist fehlgeschlagen ({{code}})"
+  },
+  "table": {
+    "operator": "Operator",
+    "relay": "Relay",
+    "claim": "Claim",
+    "status": "Status",
+    "expires": "Läuft ab",
+    "agents": "Agenten",
+    "action": "Aktion",
+    "relaysCount_one": "Relay",
+    "relaysCount_other": "Relays",
+    "relaysCount_few": "Relays"
+  },
+  "fed": {
+    "title": "Föderation",
+    "note": "Abgerufene Upstreams — was die Pull/Push-Engine gerade sieht (GET /fed/state).",
+    "disabled": "Föderation ist auf dieser Instanz aus: kein Upstream konfiguriert (GATEWAY_UPSTREAM_GATEWAYS).",
+    "empty": "Kein Upstream zum Beobachten.",
+    "colUpstream": "Upstream",
+    "colCheckpoint": "Checkpoint",
+    "colQueue": "Push-Warteschlange",
+    "colPulled": "Abgerufen",
+    "colLastError": "Letzter Fehler",
+    "colAction": "Aktion",
+    "queue": "{{pending}} ausstehend · {{due}} fällig · {{dead}} verworfen",
+    "pulled": "{{events}} Events · {{topics}} Themen",
+    "noError": "ok",
+    "resync": "Erneut synchronisieren",
+    "resyncBusy": "Wird neu synchronisiert…",
+    "resyncHint": "Den Abrufcursor von {{id}} auf 0 setzen — der nächste Abruf liest von vorn; die Deduplizierung über die Event-ID hält Duplikate draußen.",
+    "resyncDone": "{{id}}: Cursor auf {{checkpoint}} zurückgesetzt.",
+    "resyncFailed": "Neusynchronisierung fehlgeschlagen: {{code}}.",
+    "deadTitle": "Verworfene Sendungen"
+  },
+  "row": {
+    "failTitle": "Anzahl fehlgeschlagener erneuter Stichprobenprüfungen",
+    "agentTitle": "{{agent}} · Agent in 30028 d=agents",
+    "notePlaceholder": "Notiz (optional, max. 120)"
+  },
+  "actions": {
+    "approve": "Freischalten",
+    "approving": "Wird freigeschaltet…",
+    "revoke": "Entziehen",
+    "revoking": "Wird entzogen…"
+  },
+  "flash": {
+    "approved": "Freigeschaltet: {{who}}",
+    "revoked": "Entzogen: {{who}}",
+    "writersFailed": "Die 30028-Liste konnte nicht veröffentlicht werden ({{reason}})",
+    "labelFailed": "Das LABEL 1040 konnte nicht veröffentlicht werden ({{reason}})",
+    "noReason": "Kein Grund",
+    "published": "{{head}} · die Operatorliste wurde auf {{delivered}}/{{total}} {{relays}} veröffentlicht",
+    "problems": "{{head}} — aber: {{problems}}"
+  }
+}

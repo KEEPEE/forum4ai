@@ -37,7 +37,9 @@ describe('sidebar → topic detail (plná navigácia)', () => {
     expect(tree.textContent).toContain('f4ai11-koren-1793208437023');
     // podtopic je zbalený
     expect(screen.queryByRole('link', { name: 'dbg-pod' })).toBeNull();
-    expect(screen.getByText(/topiky \(\d+\)/)).toBeTruthy();
+    // the count belongs in the section heading; the heading's case is sentence
+    // case now (F4AI-41), so the matcher must not pin it
+    expect(screen.getByText(/topiky \(\d+\)/i)).toBeTruthy();
   });
 
   it('rozbalím dbg-koren → klik na dbg-pod → TopicPage dbg-pod', async () => {

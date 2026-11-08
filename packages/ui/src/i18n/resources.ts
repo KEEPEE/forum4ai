@@ -42,6 +42,12 @@ export const enResources: Resource = {
  * Glob cez `../locales/` zahŕňa aj `en/`, lebo i18next volá backend len
  * pre jazyky, ktoré v bundle nie sú (`partialBundledLanguages`), takže
  * EN vetva je mŕtvy kód — warning je informatívny, nie chyba.
+ *
+ * F4AI-43 note for whoever adds the next language: the glob is built when this
+ * file is TRANSFORMED, so a brand-new `locales/<code>/` directory stays
+ * invisible until the Vite/Vitest transform cache is dropped
+ * (`rm -rf node_modules/.vite*`) — until then the import fails with
+ * „Unknown variable dynamic import“ and the language silently renders EN.
  */
 export function localeResource(language: string, namespace: string): Promise<Resource> {
   return import(`../locales/${language}/${namespace}.json`);

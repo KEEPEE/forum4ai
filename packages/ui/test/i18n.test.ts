@@ -42,34 +42,44 @@ describe('i18n config (Phase 2a)', () => {
     const fresh = createInstance();
     await initI18n(fresh);
 
-    expect(SUPPORTED_LANGS).toEqual(['en', 'sk']);
+    expect(SUPPORTED_LANGS).toEqual(['en', 'sk', 'de']);
     expect(DEFAULT_LANG).toBe('en');
     expect(fresh.resolvedLanguage).toBe('en');
     expect(fresh.t('common:states.loading')).toBe('loading from the gateway');
 
     // SK v bundle nie je → bez tohto by build nemal samostatný lazy chunk
     expect(fresh.hasResourceBundle('sk', 'common')).toBe(false);
+    // F4AI-43: nemčina je na tom rovnako (jen `<html lang>` staticky ostáva en)
+    expect(fresh.hasResourceBundle('de', 'common')).toBe(false);
 
     await fresh.changeLanguage('sk');
     expect(fresh.t('common:states.loading')).toBe('načítavam z gateway');
     // `<html lang>` patrí i18n, nie `index.html` (statický default je en)
     expect(document.documentElement.getAttribute('lang')).toBe('sk');
 
+    // F4AI-43: the detector path reaches German the same lazy way
+    await fresh.changeLanguage('de');
+    expect(fresh.t('common:states.loading')).toBe('Lädt vom Gateway');
+    expect(document.documentElement.getAttribute('lang')).toBe('de');
+
     await fresh.changeLanguage('en');
     expect(fresh.t('common:states.loading')).toBe('loading from the gateway');
   });
 
-  it('en a sk majú rovnakú štruktúru kľúčov vo všetkých namespace-och', async () => {
+  it('every supported language has the same key structure as en in every namespace', async () => {
     const fresh = createInstance();
     await initI18n(fresh);
-    await fresh.changeLanguage('sk');
-
-    for (const ns of NAMESPACES) {
-      const en = fresh.getResourceBundle('en', ns);
-      const sk = fresh.getResourceBundle('sk', ns);
-      expect(en, `chýba en/${ns}.json`).toBeTypeOf('object');
-      expect(sk, `chýba sk/${ns}.json`).toBeTypeOf('object');
-      expect(leafKeys(sk), `sk/${ns} sa líši od en/${ns}`).toEqual(leafKeys(en));
+    // F4AI-43: one loop over the registry — a new language is checked without
+    // touching this test (that is the whole point of the registry)
+    for (const code of SUPPORTED_LANGS.filter((code) => code !== 'en')) {
+      await fresh.changeLanguage(code);
+      for (const ns of NAMESPACES) {
+        const en = fresh.getResourceBundle('en', ns);
+        const other = fresh.getResourceBundle(code, ns);
+        expect(en, `chýba en/${ns}.json`).toBeTypeOf('object');
+        expect(other, `chýba ${code}/${ns}.json`).toBeTypeOf('object');
+        expect(leafKeys(other), `${code}/${ns} sa líši od en/${ns}`).toEqual(leafKeys(en));
+      }
     }
   });
 
@@ -85,6 +95,23 @@ describe('i18n config (Phase 2a)', () => {
     expect(i18n.t('forum:thread.replies', { count: 1 })).toBe('1 odpoveď');
     expect(i18n.t('forum:thread.replies', { count: 2 })).toBe('2 odpovede');
     expect(i18n.t('forum:thread.replies', { count: 5 })).toBe('5 odpovedí');
+  });
+
+  // F4AI-43: nemčina má pravidlá `one`/`other` (Intl.PluralRules), nie `few` —
+  // `_few` kľúče v de sú len kópiou `_other`, aby zostala množina kľúčov
+  // identická s en/sk (test vyššie); vybraný nikdy nebudú
+  it('nemčina má dva plural tvary (one / other) a tie sa renderujú', () => {
+    expect(new Intl.PluralRules('de').select(1)).toBe('one');
+    expect(new Intl.PluralRules('de').select(2)).toBe('other');
+    expect(new Intl.PluralRules('de').select(5)).toBe('other');
+
+    expect(i18n.t('forum:thread.replies', { count: 1, lng: 'de' })).toBe('1 Antwort');
+    expect(i18n.t('forum:thread.replies', { count: 2, lng: 'de' })).toBe('2 Antworten');
+    expect(i18n.t('forum:thread.replies', { count: 5, lng: 'de' })).toBe('5 Antworten');
+    expect(i18n.t('forum:search.results', { count: 1, lng: 'de' })).toBe('1 Ergebnis');
+    expect(i18n.t('forum:search.results', { count: 12, lng: 'de' })).toBe('12 Ergebnisse');
+    // the dead `_few` copy must never win: German 2 is `other`
+    expect(i18n.t('forum:ideas.count', { count: 2, lng: 'de' })).toBe('2 Ideen');
   });
 
   it('copy write-gate kodov renderuje v sk aj v en', async () => {

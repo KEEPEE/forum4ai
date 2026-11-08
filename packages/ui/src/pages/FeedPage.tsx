@@ -18,11 +18,19 @@ import { useResource } from '../hooks/useResource.js';
 import { useLiveFeed } from '../hooks/useLiveFeed.js';
 import { EventCard } from '../components/EventCard.js';
 import { StateEmpty, StateError, StateLoading } from '../components/StateView.js';
+import { debugEnabledHere } from '../lib/debug.js';
 
-export function FeedPage(): JSX.Element {
+/** velkosť teľa feedu — viditeľná len v technickom (debug) riadku */
+const FEED_LIMIT = 20;
+
+/**
+ * `debug` je voliteľné len preto, aby test vedol vykresliť produkčný
+ * režim (v testoch je `import.meta.env.DEV` true); routa ho neposielá.
+ */
+export function FeedPage({ debug = debugEnabledHere() }: { debug?: boolean } = {}): JSX.Element {
   const { t } = useTranslation('forum');
   const api = useApi();
-  const feed = useResource(() => api.feed({ limit: 20 }), [api]);
+  const feed = useResource(() => api.feed({ limit: FEED_LIMIT }), [api]);
 
   // live: nové koreňové vlákna (1020) → refetch feedu
   const live = useLiveFeed({
@@ -37,12 +45,27 @@ export function FeedPage(): JSX.Element {
       <div className="page-head">
         <div>
           <h1 className="page-title">{t('feed.title')}</h1>
-          <p className="page-subtitle">
-            {t('feed.subtitle')}{' '}
-            <span data-testid="feed-live-status" title={t('live.threadsTitle')}>
-              {t('live.status')} {live.status}
-            </span>
+          {/* F4AI-41: the subtitle is reader copy. The query parameters and
+              the WS state are developer detail — they stay reachable behind
+              the debug flag (dev build, ?debug=1, forum4ai_debug=1). */}
+          <p className="page-subtitle" data-testid="feed-subtitle">
+            {t('feed.subtitle')}
           </p>
+          {debug && (
+            <p className="page-subtitle page-subtitle-tech" data-testid="feed-dev-detail">
+              {t('feed.debugDetail', {
+                kinds: '1020/1021/1022',
+                limit: String(FEED_LIMIT),
+                status: live.status,
+              })}
+              {/* the separator is a literal string — JSX collapses a plain text
+                  space and the two parts would run together */}
+              {' · '}
+              <span data-testid="feed-live-status" title={t('live.threadsTitle')}>
+                {t('live.status')} {live.status}
+              </span>
+            </p>
+          )}
         </div>
       </div>
 

@@ -76,6 +76,11 @@ function kindRange(from: number, to: number): number[] {
 export const DEFAULT_ALLOWED_KINDS: ReadonlySet<number> = new Set<number>([
   0,
   3,
+  // F4AI-35 (node mesh): NIP-09 deletion request. Bez nej by uzol nedokázal
+  // stiahnúť vlastné announcement (kind 5 by relay odmietol) a adresár by ho
+  // držal až do TTL. Deletion má adresátov v `e` tagoch — podpis overuje
+  // relays, obsah mení len podpisovateľ.
+  5,
   ...kindRange(1020, 1059),
   10030,
   10031,

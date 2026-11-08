@@ -8,6 +8,7 @@
  * not in a module-scope constant, or it would freeze in the language of import.
  */
 import { i18n } from './index.js';
+import { DEFAULT_LANG, intlLocaleFor } from './config.js';
 import { DEFAULT_CONTENT_LANG, normalizeLangCode } from '../lib/lang.js';
 
 /** preklad kľúča v aktuálnom jazyku (interpolation values bez pluralu) */
@@ -20,6 +21,35 @@ export function t(key: string, options?: Record<string, unknown>): string {
 /** preklad s pluralom — `Intl.PluralRules` rozhodne `one`/`few`/`other` */
 export function tp(key: string, count: number, options?: Record<string, unknown>): string {
   return String(i18n.t(key, { count, ...options }));
+}
+
+/**
+ * Show a translated headline as a mid-sentence fragment (F4AI-43).
+ *
+ * The composer and the settings panel quote the write-gate headline inside a
+ * longer sentence, so the design lowers its first letter. Only the FIRST
+ * letter: a blanket `toLowerCase()` also flattened German nouns
+ * ("Zum Schreiben anmelden" → "zum schreiben anmelden") and brand names, and
+ * in German that is a spelling error, not a style choice.
+ *
+ * A leading acronym ("NIP-07 …", "DOI") is a name rather than a sentence
+ * start, so it is left exactly as the locale file spells it.
+ */
+export function sentenceFragment(text: string): string {
+  if (/^[A-Z]{2}/.test(text)) return text;
+  if (text.length === 0) return text;
+  return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
+/**
+ * Aktuálny jazyk rozhrania ako BCP-47 tag pre `Intl` (F4AI-43).
+ *
+ * `de` formujeme ako `de-DE`, `sk` ako `sk-SK` — desatinná čiarka, medzera pred
+ * `%` a poradie dní patria do lokaly, nie do kódu. Musí sa VOLAŤ (nie
+ * module-scope const), inak by sa jazyk zamrzol v čase importu.
+ */
+export function currentIntlLocale(): string {
+  return intlLocaleFor(i18n.resolvedLanguage ?? i18n.language ?? DEFAULT_LANG);
 }
 
 /**

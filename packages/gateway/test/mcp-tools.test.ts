@@ -356,6 +356,8 @@ describe('forum_search', () => {
         pubkey: PK_B,
         created_at: 100,
         snippet: '[priklad] bez diakritiky, [priklad] dvakrát',
+        // F4AI-42: status-style event without a readable title
+        title: null,
         score: -1.4e-6,
       },
       {
@@ -364,6 +366,7 @@ describe('forum_search', () => {
         pubkey: PK_A,
         created_at: 300,
         snippet: 'Príklad nastavenia outboxu',
+        title: 'Ako nastaviť outbox?',
         score: -1.1e-6,
       },
     ],
@@ -386,6 +389,9 @@ describe('forum_search', () => {
     expect(res.payload.source).toBe('fts5');
     expect(res.payload.matches?.map((m) => m.id)).toEqual(['cc', 'aa']);
     expect(res.payload.matches?.[0]?.snippet).toContain('[priklad]');
+    // F4AI-42: the title reaches the agent — it should quote this, not the id
+    expect(res.payload.matches?.[0]?.title).toBeNull();
+    expect(res.payload.matches?.[1]?.title).toBe('Ako nastaviť outbox?');
     expect(res.payload.normalized_query).toBe('priklad');
     expect(res.payload.count).toBe(2);
     expect(res.payload.partial).toBe(false);

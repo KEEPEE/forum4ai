@@ -3,6 +3,10 @@
  * topicov z `GET /topics` (live dáta, placeholder pri chybe/prázdnom
  * indexe).
  */
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 
@@ -20,6 +24,70 @@ describe('Sidebar', () => {
     // Phase 4b — Papiere (v SK preklade «Papiere», testy renderujú v SK)
     expect(screen.getByRole('link', { name: /papiere/i }).getAttribute('href')).toBe('/papers');
     expect(screen.getByRole('link', { name: /search/i }).getAttribute('href')).toBe('/search');
+  });
+
+  it('every main-nav item draws its icon as inline SVG, not a font glyph (F4AI-41)', () => {
+    // The Papers icon used U+2317 (⌗): the bundled Outfit subset does not carry
+    // it, so the browser drew an empty box. Its siblings (≡ ✦ ⌕ ✎ ⚙ ★) only
+    // rendered because an OS fallback font supplied them — which is also why ⌕
+    // came out visibly smaller than the rest. An SVG path involves no font, so
+    // neither the tofu box nor the mismatched size can come back.
+    renderWithProviders(<Sidebar />);
+    // the sidebar is the only `complementary` landmark; its first <nav> is the
+    // main navigation (its aria-label is translated, so we do not match on it)
+    const nav = screen.getByRole('complementary').querySelector('nav');
+    if (nav === null) throw new Error('the sidebar renders no navigation');
+    const icons = [...nav.querySelectorAll('.link-icon')];
+    expect(icons).toHaveLength(4);
+    for (const icon of icons) {
+      // a glyph leaves text inside the span, an icon leaves nothing but the svg
+      expect((icon.textContent ?? '').trim()).toBe('');
+      const path = icon.querySelector('svg path');
+      expect(path, 'the icon is not an inline SVG path').not.toBeNull();
+      expect(path?.getAttribute('d')).toBeTruthy();
+      // the colour comes from the link, so the active accent still applies
+      expect(path?.getAttribute('stroke')).toBe('currentColor');
+    }
+    expect(nav.querySelector('[href="/papers"] svg')).not.toBeNull();
+    // no symbol/dingbat code point survives anywhere in the navigation
+    expect(nav.textContent ?? '').not.toMatch(/[⌀-➿]/);
+  });
+
+  it('nav labels use one case in both locales (F4AI-41)', async () => {
+    // Before: "Feed/Ideas/Papers/Search" next to "register/settings". Sentence
+    // case is the rule of the whole UI, so every nav label starts with a
+    // capital letter. `members` is inline prose in a sentence (it stays
+    // lowercase on purpose) and the `*Aria` keys are screen-reader labels,
+    // which are not rendered — both are exempt.
+    const exempt = new Set(['members', 'mainAria', 'accountAria']);
+    const here = dirname(fileURLToPath(import.meta.url));
+    for (const lang of ['en', 'sk']) {
+      const path = join(here, '..', 'src', 'locales', lang, 'common.json');
+      const source = await readFile(path, 'utf8');
+      const nav = (JSON.parse(source) as { nav: Record<string, string> }).nav;
+      for (const [key, label] of Object.entries(nav)) {
+        if (exempt.has(key)) continue;
+        expect(label.charAt(0), `${lang}/common.json nav.${key} must start with a capital`).toBe(
+          label.charAt(0).toUpperCase(),
+        );
+      }
+    }
+  });
+
+  it('sidebar renders every nav label capitalized (F4AI-41)', () => {
+    renderWithProviders(<Sidebar />);
+    const links = [...screen.getByRole('complementary').querySelectorAll('.side-link')];
+    expect(links.length).toBeGreaterThanOrEqual(6);
+    for (const link of links) {
+      // the icon is a separate span — the label is the bare text node after it
+      const label = [...link.childNodes]
+        .filter((node) => node.nodeType === 3)
+        .map((node) => node.textContent ?? '')
+        .join('')
+        .trim();
+      expect(label).not.toBe('');
+      expect(label.charAt(0)).toBe(label.charAt(0).toUpperCase());
+    }
   });
 
   it('korene sú viditeľné, deti sú spočiatku zbalené (S12 toggle)', async () => {

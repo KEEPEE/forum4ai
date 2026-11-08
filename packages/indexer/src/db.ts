@@ -124,6 +124,13 @@ export interface SearchHit {
    */
   score: number;
   snippet?: string;
+  /**
+   * F4AI-42: the human-readable title of the event (`shared/titles.ts`),
+   * `null` when the event has none — a status event whose content is JSON, an
+   * empty post. The rule is shared with the gateway so both read the same row
+   * the same way.
+   */
+  title: string | null;
   /** F4AI-2b2: jazyk eventu z NIP-32 labelu, `null` = neoznačený */
   lang: string | null;
   /**
@@ -304,7 +311,7 @@ export function addressFor(event: NostrEvent): string | null {
  * (a jeho testy) nezmenilo. Pravidlá buildu aj dôvod presunu sú v dokumentácii
  * shared modulu; `nekopírovať` je súčasť story — jeden zdroj pravdy.
  */
-import { buildMatchQuery, KINDS, ORIGIN_SELF, parseContentLang } from '@forum4ai/shared';
+import { buildMatchQuery, eventTitle, KINDS, ORIGIN_SELF, parseContentLang } from '@forum4ai/shared';
 
 import { paperColumnsFor } from './papers.js';
 
@@ -754,21 +761,27 @@ export class IndexerDb {
       score: number;
       snippet?: string;
     }>;
-    return rows.map((row) => ({
-      id: row.id,
-      pubkey: row.pubkey,
-      kind: row.kind,
-      created_at: row.created_at,
-      content: row.content,
-      tags: JSON.parse(row.tags_json) as NostrTag[],
-      score: row.score,
-      lang: typeof row.lang === 'string' ? row.lang : null,
-      // Phase 6a: fallback na 'self'/true je pre read-only DB pred 6a —
-      // indexer (writer) migroval a má skutočné hodnoty
-      origin: typeof row.origin === 'string' ? row.origin : ORIGIN_SELF,
-      trusted: typeof row.trusted === 'number' ? row.trusted === 1 : true,
-      ...(row.snippet !== undefined ? { snippet: row.snippet } : {}),
-    }));
+    return rows.map((row) => {
+      const tags = JSON.parse(row.tags_json) as NostrTag[];
+      return {
+        id: row.id,
+        pubkey: row.pubkey,
+        kind: row.kind,
+        created_at: row.created_at,
+        content: row.content,
+        tags,
+        // F4AI-42: the title is derived, not stored — the index has no title
+        // column and a derived one cannot drift out of sync with the event
+        title: eventTitle({ kind: row.kind, content: row.content, tags }),
+        score: row.score,
+        lang: typeof row.lang === 'string' ? row.lang : null,
+        // Phase 6a: fallback na 'self'/true je pre read-only DB pred 6a —
+        // indexer (writer) migroval a má skutočné hodnoty
+        origin: typeof row.origin === 'string' ? row.origin : ORIGIN_SELF,
+        trusted: typeof row.trusted === 'number' ? row.trusted === 1 : true,
+        ...(row.snippet !== undefined ? { snippet: row.snippet } : {}),
+      };
+    });
   }
 
   /**

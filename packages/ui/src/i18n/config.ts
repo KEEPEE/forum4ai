@@ -12,14 +12,76 @@
  *  - detection: `?lng=` → `localStorage.forum4ai_lang` → `navigator`,
  *    fallback `en`; `nonExplicitSupportedLngs` so that `sk-SK` falls back to `sk`,
  *  - no ICU plugin — JSON v4 plurals go through `Intl.PluralRules`
- *    (Slovak needs `one`/`few`/`other`, English needs `one`/`other`).
+ *    (Slovak needs `one`/`few`/`other`, German and English need `one`/`other`),
+ *  - F4AI-43: `SUPPORTED_LANGUAGES` is the ONE registry of interface languages.
+ *    A component never lists languages itself — it maps over the registry, so
+ *    adding a language is one entry here + one `locales/<code>/` directory.
  */
 import type { InitOptions } from 'i18next';
 import type { DetectorOptions } from 'i18next-browser-languagedetector';
 
-/** podporované jazyky — poradie určuje fallback reťazec */
-export const SUPPORTED_LANGS = ['en', 'sk'] as const;
-export type AppLang = (typeof SUPPORTED_LANGS)[number];
+/**
+ * One interface language, everything a menu or a formatter needs to know
+ * about it (F4AI-43).
+ */
+export interface LanguageDescriptor {
+  /** i18next code = the locale directory name (`locales/<code>/`) */
+  readonly code: string;
+  /**
+   * The name in its own language (endonym). Deliberately NOT an i18n key: a
+   * language menu lists languages under the name their speakers recognise, so
+   * "Deutsch" must read "Deutsch" in an English menu too.
+   */
+  readonly nativeName: string;
+  /** English name — what a screen reader set to English can pronounce */
+  readonly englishName: string;
+  /** flag emoji, decorative only (rendered `aria-hidden`) */
+  readonly flag: string;
+  /** BCP-47 tag for `Intl` date/number formatting (`de` → `de-DE`) */
+  readonly intlLocale: string;
+}
+
+/**
+ * The registry — the order is also the fallback chain (`en` first). Adding a
+ * fourth language: append the entry, add `locales/<code>/*.json`, done.
+ *
+ * Two limits worth knowing before adding one (F4AI-43 review):
+ *  - the detector runs with `load: 'languageOnly'`, so a region-carrying code
+ *    (`pt-BR`) is not addressable — register the LANGUAGE (`pt`) and keep the
+ *    region in `intlLocale`, which is only what `Intl` formats with;
+ *  - `flag` is an emoji and Windows draws no flag glyphs at all, so the flag is
+ *    decoration (`aria-hidden`) — the code and the endonym carry the meaning.
+ */
+export const SUPPORTED_LANGUAGES = [
+  { code: 'en', nativeName: 'English', englishName: 'English', flag: '🇬🇧', intlLocale: 'en-GB' },
+  { code: 'sk', nativeName: 'slovenčina', englishName: 'Slovak', flag: '🇸🇰', intlLocale: 'sk-SK' },
+  { code: 'de', nativeName: 'Deutsch', englishName: 'German', flag: '🇩🇪', intlLocale: 'de-DE' },
+] as const satisfies readonly LanguageDescriptor[];
+
+export type AppLang = (typeof SUPPORTED_LANGUAGES)[number]['code'];
+
+/** podporované jazyky — odvodené z registry (jeden zdroj pravdy, F4AI-43) */
+export const SUPPORTED_LANGS: readonly AppLang[] = SUPPORTED_LANGUAGES.map((entry) => entry.code);
+
+/** registry entry for a code; `null` for an unsupported one */
+export function languageByCode(code: unknown): LanguageDescriptor | null {
+  if (typeof code !== 'string') return null;
+  const normalized = code.trim().toLowerCase();
+  return SUPPORTED_LANGUAGES.find((entry) => entry.code === normalized) ?? null;
+}
+
+/** is this a supported interface language? */
+export function isSupportedLang(code: unknown): code is AppLang {
+  return languageByCode(code) !== null;
+}
+
+/**
+ * BCP-47 tag for `Intl` formatting in the UI language (`de` → `de-DE`).
+ * Unknown code → the locale of the default language; `Intl` never throws.
+ */
+export function intlLocaleFor(code: unknown): string {
+  return languageByCode(code)?.intlLocale ?? languageByCode(DEFAULT_LANG)?.intlLocale ?? 'en-GB';
+}
 
 /** výchozí jazyk, keď používáč nič nenastavil a prehliadač nerozumieme */
 export const DEFAULT_LANG: AppLang = 'en';

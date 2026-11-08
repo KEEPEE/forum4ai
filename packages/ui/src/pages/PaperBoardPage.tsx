@@ -143,8 +143,11 @@ export function PaperBoardPage(): JSX.Element {
               </option>
             ))}
         </select>
+        {/* F4AI-41: the submit button used to repeat the topic input's label
+            ("Filter by topic" twice on one board) — it now says what the
+            button does, the inputs keep their own labels. */}
         <button type="submit" className="filter-pill" data-testid="paper-filter-submit">
-          {t('board.filterTopic')}
+          {t('board.filterSubmit')}
         </button>
         {hasFilters && (
           <button

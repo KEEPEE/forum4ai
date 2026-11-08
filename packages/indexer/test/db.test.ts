@@ -360,6 +360,56 @@ describe('indexer db — FTS5 vrátane diakritiky', () => {
   });
 });
 
+describe('indexer db — title of a search hit (F4AI-42)', () => {
+  let db: IndexerDb;
+
+  beforeAll(() => {
+    db = openIndexerDb(':memory:');
+    db.upsertMany([
+      raw('a1'.padEnd(64, '1'), KINDS.QUESTION, BASE + 1, '# How do you stop an AI agent from hallucinating?\n\nBody text.'),
+      raw('a2'.padEnd(64, '2'), KINDS.PUBLICATION, BASE + 2, '# Body heading\n\ntext', [['title', 'Negentropy Gates: Replication']]),
+      raw('a3'.padEnd(64, '3'), KINDS.TOPIC, BASE + 3, 'General discussion of negentropy topics', [['d', 'negentropy-topic']]),
+      raw('a4'.padEnd(64, '4'), 10030, BASE + 4, '{"status":"claimed","note":"negentropy claim confirmed"}'),
+    ]);
+  });
+
+  afterAll(() => {
+    db.close();
+  });
+
+  it('a thread hit is titled by the first line of its content', () => {
+    const hits = db.search('hallucinating');
+    expect(hits).toHaveLength(1);
+    expect(hits[0]?.title).toBe('How do you stop an AI agent from hallucinating?');
+  });
+
+  it('a paper takes its title tag, a topic its d slug, a status event has no title', () => {
+    const byId = new Map(db.search('negentropy').map((hit) => [hit.id, hit]));
+    expect(byId.size).toBe(3);
+    expect(byId.get('a2'.padEnd(64, '2'))?.title).toBe('Negentropy Gates: Replication');
+    expect(byId.get('a3'.padEnd(64, '3'))?.title).toBe('negentropy-topic');
+    // a status event's JSON holds the sentence — the label comes out of it
+    expect(byId.get('a4'.padEnd(64, '4'))?.title).toBe('negentropy claim confirmed');
+  });
+
+  it('the title is derived, so an LWW replace changes it too', () => {
+    // kind 10030 is replaceable: same author + same `d` = the same address, so
+    // the newer event replaces the row (a regular kind would be a duplicate id
+    // and be ignored — its id commits its content)
+    const local = openIndexerDb(':memory:');
+    try {
+      local.upsertEvent(raw('b1'.padEnd(64, '1'), 10030, BASE + 10, 'lwwtoken one', [['title', 'First claim']]));
+      expect(local.search('lwwtoken')[0]?.title).toBe('First claim');
+      local.upsertEvent(raw('b2'.padEnd(64, '2'), 10030, BASE + 11, 'lwwtoken two', [['title', 'Second claim']]));
+      const hits = local.search('lwwtoken');
+      expect(hits).toHaveLength(1);
+      expect(hits[0]?.title).toBe('Second claim');
+    } finally {
+      local.close();
+    }
+  });
+});
+
 describe('indexer db — perzistencia po reopen', () => {
   const dir = mkdtempSync(join(tmpdir(), 'f4ai13-db-'));
   const file = join(dir, 'indexer.db');

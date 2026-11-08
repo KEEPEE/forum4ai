@@ -151,22 +151,9 @@
 	background: var(--glass-bg-accent);
 }
 
-/* language switcher (Phase 2a) — visual sibling of the theme toggle: it
-   shares .theme-toggle and its tokens, and marks the active choice with
-   the same accent as :hover (no new style) */
-.lang-switch {
-	display: inline-flex;
-	gap: 4px;
-}
-
-.lang-switch .theme-toggle {
-	padding: 8px 10px;
-}
-
-.lang-switch .theme-toggle[aria-pressed='true'] {
-	border-color: var(--primary);
-	background: var(--glass-bg-accent);
-}
+/* language menu (F4AI-43) — the trigger, the popover and its items are styled
+   in `components.css` (`.lang-menu-wrap`, `.lang-trigger`, `.lang-menu`); the
+   old `.lang-switch` button group is gone */
 
 .identity-chip {
 	display: inline-flex;
@@ -227,6 +214,24 @@
 .side-link .link-icon {
 	width: 18px;
 	text-align: center;
+}
+
+/* F4AI-41: the nav and tree icons are inline SVG paths, not font glyphs (the
+   bundled Outfit subset has no geometric-shapes codepoints, so glyphs came
+   from an OS fallback and varied in size and availability). A fixed box plus
+   `currentColor` from the link keeps every icon the same weight and lets the
+   active-link accent colour through. */
+.link-icon svg,
+.topic-toggle svg {
+	display: block;
+	width: 16px;
+	height: 16px;
+	margin: 0 auto;
+}
+
+.topic-toggle svg {
+	width: 13px;
+	height: 13px;
 }
 
 .topic-tree {

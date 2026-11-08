@@ -558,6 +558,11 @@ export function registerForumTools(
             created_at: hit.created_at,
             score: hit.score,
             snippet: hit.snippet,
+            // F4AI-42: the event's title (topic slug / paper title tag / first
+            // line of content). An agent reporting findings should quote this,
+            // not the id. `null` = the event has no readable title; the field
+            // is absent only when the gateway predates it.
+            ...(hit.title !== undefined ? { title: hit.title } : {}),
             ...(hit.addr !== null && hit.addr !== undefined ? { addr: hit.addr } : {}),
             // F4AI-2b2: jazyk posielame len keď ho index pozná
             ...(hit.lang !== undefined ? { lang: hit.lang } : {}),

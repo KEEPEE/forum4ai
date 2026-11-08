@@ -39,7 +39,12 @@
  * Response:
  *   { phase, query, normalized_query, took_ms, count, limit, results[],
  *     channels[], partial, deadline_ms, filters, untrusted }
- *   `results[]` = { id, kind, type?, pubkey, created_at, snippet, score, addr?, lang?, origin?, trusted? }
+ *   `results[]` = { id, kind, type?, pubkey, created_at, snippet, title?, score, addr?, lang?, origin?, trusted? }
+ *   `title` is F4AI-42: the event's human-readable title (topic `d` slug, paper
+ *   `title` tag, otherwise the first line of `content`), derived from the row by
+ *   `eventTitle` in `@forum4ai/shared`. `null` = the event has no readable title;
+ *   the field is only absent for a channel that does not read content/tags. It is
+ *   an ADDED field — nothing that was there before was renamed or removed.
  *   `type` is the reader-facing name of the type (`paper` for 30023) — it is added
  *   only for kinds that have a name; `kind` stays the canonical datum.
  *   `lang` is the ISO-639-1 code from the NIP-32 label, `null` = an event without
@@ -183,9 +188,22 @@ export interface SearchRouteOptions {
   knownOrigins?: () => string[];
 }
 
+/**
+ * F4AI-35 (epic node mesh): druhy, ktoré nie sú diskusný obsah. Node
+ * announcement (kind 30026) je heartbeat — indexovaný je, lebo indexer
+ * berie celý rozsah 30020-30029, ale do ľudského vyhľadávania nepatrí.
+ */
+const MESH_INFRA_KINDS: readonly number[] = [KINDS.NODE_ANNOUNCE];
+
 interface ParsedParams {
   q: string;
   kinds?: number[];
+  /**
+   * F4AI-35: výluka aplikovaná len pri absencii `kinds=`/`type=` (mesh
+   * announcementy nie sú obsah). V `filters` sa neecha — nie je to parameter
+   * klienta.
+   */
+  excludeKinds?: number[];
   /** Phase 4a: čitateľské mená z `type=` (len pre echo vo `filters`) */
   types?: string[];
   authors?: string[];
@@ -481,6 +499,10 @@ export function registerSearchRoutes(app: Hono, options: SearchRouteOptions): vo
       q: query.q,
       limit: limit.value,
       ...(kindFilter !== undefined ? { kinds: kindFilter } : {}),
+      // F4AI-35: bez explicitného výberu druhov Nehľadáme infraštruktúru siete
+      // (kind 30026 heartbeaty). S explicitným `kinds=30026` ich naopak
+      // vrátime — volajúci si ich vypýtal.
+      ...(kindFilter === undefined ? { excludeKinds: [...MESH_INFRA_KINDS] } : {}),
       ...(types.names !== undefined ? { types: types.names } : {}),
       ...(authors.value !== undefined ? { authors: authors.value } : {}),
       ...(since.value !== undefined ? { since: since.value } : {}),
@@ -586,6 +608,14 @@ export function registerSearchRoutes(app: Hono, options: SearchRouteOptions): vo
         pubkey: hit.pubkey,
         created_at: hit.created_at,
         snippet: hit.snippet ?? '',
+        // F4AI-42: the human-readable title of the event (topic slug, paper
+        // title tag, first line of the content — `eventTitle` in shared). A
+        // search hit used to carry no title at all, which left the UI with the
+        // event id or the NIP-01 address as the heading of every result.
+        // `null` = the event genuinely has no title (a status event whose
+        // content is JSON); the field is absent only for a channel that does
+        // not read content and tags at all — same convention as `lang`.
+        ...(hit.title !== undefined ? { title: hit.title } : {}),
         score: hit.score,
         ...(hit.addr !== null && hit.addr !== undefined ? { addr: hit.addr } : {}),
         // F4AI-2b2: `lang` posielame len keď ho index pozná (kanál ho buď

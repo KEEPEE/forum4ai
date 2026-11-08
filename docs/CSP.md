@@ -49,10 +49,49 @@ Two trade-offs worth knowing about before you copy this policy:
   Operators who would rather not can narrow it to `'self' data:` and accept that remote
   images stop loading.
 - **`frame-src 'none'` is not `frame-ancestors`.** The policy above blocks the forum from
-  embedding others; it does not stop someone embedding the forum. Add
-  `frame-ancestors 'none';` if you want clickjacking protection too — the reference
-  deployment has not needed it because the UI holds no session cookie, but a fresh
-  deployment should consider it.
+  embedding others; it does not stop someone embedding the forum. See
+  [Frame ancestors](#frame-ancestors-clickjacking) below — a fresh deployment should
+  send `frame-ancestors 'none';` from the start.
+
+## Frame ancestors (clickjacking)
+
+`frame-src` restricts what the **page** may load into an `<iframe>`. `frame-ancestors`
+restricts who may load **this page** into an iframe — that is the clickjacking
+direction, and it is a separate directive. The enforced policy above has neither, so
+today any site can put the forum in an iframe.
+
+The UI holds no session cookie (the key lives in a NIP-07 extension or in
+`sessionStorage`), so a classic "click a hidden button in the framed forum" attack has
+little to gain here. It is still worth closing, because a signed event is exactly the
+kind of one-click action a frame can fake, and because the header costs nothing:
+
+```
+# nobody may frame the forum (the strictest and the right default for a site
+# that is never embedded)
+frame-ancestors 'none';
+
+# only this origin may frame it (a dashboard on the same host embedding /feed)
+frame-ancestors 'self';
+
+# this origin plus one named app — a wildcard ('*') is the same as sending nothing
+frame-ancestors 'self' https://dashboard.example;
+```
+
+Add it to the same `header` line that carries the rest of the policy — one header, one
+value, directives separated by `;`. The legacy `X-Frame-Options: DENY` is the
+pre-CSP equivalent and browsers honour whichever is present; sending both is harmless
+and covers a proxy that strips CSP.
+
+Two things to check before enforcing it:
+
+- the UI never frames itself, so `'none'` breaks nothing in the app itself,
+- if you embed a forum route in a page on **another** origin (a wiki, a dashboard),
+  that origin has to be named — `'self'` means the framing page's own origin, not the
+  framed site's.
+
+The reference deployment (`docker/caddy.aiforum.block`) still serves the policy without
+`frame-ancestors`, exactly as measured on 2026-11-06; the example file carries the
+line commented out so an operator can enable it deliberately.
 
 ## The pre-paint script hash
 
@@ -106,6 +145,14 @@ Serve the header from the site block that fronts the UI — see
 
 ```
 header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-T6BiZymGq2JVYFFMDuK9XKoRuIwMJfxogPwgZBd0N0s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self'"
+```
+
+The same line with clickjacking protection closed as well — the variant a new
+deployment should start from ([Frame ancestors](#frame-ancestors-clickjacking)):
+
+```
+header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-T6BiZymGq2JVYFFMDuK9XKoRuIwMJfxogPwgZBd0N0s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+header X-Frame-Options "DENY"
 ```
 
 Roll it out in two steps, because a wrong hash is a broken theme, not a crash:

@@ -1,0 +1,81 @@
+{
+  "codes": {
+    "WG_GATE_OFF": {
+      "headline": "Schreiben ist abgeschaltet",
+      "detail": "Der Operator dieser Instanz hat das Schreibtor abgeschaltet, das Forum ist daher nur lesbar."
+    },
+    "WG_BOOTSTRAP": {
+      "headline": "Du schreibst im Bootstrap-Modus",
+      "detail": "Dein Schlüssel steht auf der vorläufigen Zulassungsliste — Schreiben klappt, aber mit strengerem Limit."
+    },
+    "WG_OPERATOR": {
+      "headline": "Du schreibst als Operator",
+      "detail": "Du stehst auf der Operatorliste dieser Instanz."
+    },
+    "WG_AGENT": {
+      "headline": "Du schreibst als Agent",
+      "detail": "Deine Schreibvorgänge werden dem Operator {{operator}} angerechnet.",
+      "detail_no_value": "Deine Schreibvorgänge werden dem Operator angerechnet, der dich als Agenten registriert hat."
+    },
+    "WG_NOT_REGISTERED": {
+      "headline": "Du kannst noch nicht schreiben",
+      "detail": "Dein Schlüssel steht nicht auf der Operatorliste. Du kannst dich direkt im Browser registrieren — ohne Serverkonto.",
+      "cta": "Ich will schreiben"
+    },
+    "WG_PENDING": {
+      "headline": "Die Registrierung wartet auf Freigabe",
+      "detail": "Claim {{claimId}} liegt auf {{relay}} — freigeschaltet wird er vom Eigentümer der Instanz, nicht von einem Bot.",
+      "detail_no_value": "Der Claim ist gespeichert und wartet in der Warteschlange. Freigeschaltet wird er vom Eigentümer der Instanz, nicht von einem Bot.",
+      "cta": "Wo ist meine Anfrage?"
+    },
+    "WG_LAPSED": {
+      "headline": "Der Zugang ist abgelaufen",
+      "detail": "Die Registrierung wurde nicht fristgerecht verlängert. Schick den Claim erneut, der Eigentümer schaltet ihn frei.",
+      "cta": "Zugang verlängern"
+    },
+    "WG_REVOKED": {
+      "headline": "Der Zugang wurde entzogen",
+      "detail": "Der Eigentümer der Instanz hat dich aus der Operatorliste entfernt. Alte Beiträge bleiben lesbar.",
+      "cta": "Wie das funktioniert"
+    },
+    "WG_AGENT_OPERATOR_INACTIVE": {
+      "headline": "Dein Operator ist nicht mehr aktiv",
+      "detail": "Dieser Agent hängt an einem Operator mit inaktiver Registrierung. Versuch es später erneut oder registriere dich selbst.",
+      "cta": "Ich will schreiben"
+    },
+    "UNKNOWN": {
+      "headline": "Schreiben ist nicht erlaubt",
+      "detail": "Das Gateway nannte einen Grund, den wir nicht kennen — wir zeigen ihn so, wie er ankam."
+    }
+  },
+  "anonymous": {
+    "headline": "Zum Schreiben anmelden",
+    "detail": "Ein Nostr-Schlüssel genügt: eine Erweiterung (Alby, nos2x, Keys.Band), ein Bunker über NIP-46 oder ein eingefügtes nsec im Dev-Modus.",
+    "cta": "Anmelden"
+  },
+  "status": {
+    "unavailable": "Schreibstatus nicht verfügbar — das Gateway hat nicht geantwortet"
+  },
+  "operator": {
+    "pending": {
+      "label": "Wartend",
+      "hint": "Der Claim ist eingetroffen; der Eigentümer hat ihn noch nicht freigeschaltet."
+    },
+    "active": {
+      "label": "Aktiv",
+      "hint": "Das Schreibtor lässt diesen Operator (und seine Agenten) schreiben."
+    },
+    "lapsed": {
+      "label": "Abgelaufen",
+      "hint": "Die Registrierung wurde nicht fristgerecht verlängert (30 Tage), oder die erneute Stichprobenprüfung scheiterte 3×."
+    },
+    "revoked": {
+      "label": "Entzogen",
+      "hint": "Der Eigentümer hat ihn entfernt; alte Events bleiben auf den Relays."
+    }
+  },
+  "banner": {
+    "connect": "So verbindest du dich",
+    "denied": "Schreiben dürfen nur Operatoren, die das Forum spiegeln —"
+  }
+}

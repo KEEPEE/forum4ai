@@ -58,6 +58,52 @@ function seed(path: string): void {
   insert.run('e1'.padEnd(64, '1'), PK_A, 1020, 1_000, 'Reklamačná poistka — ako podať reklamačný formulár?', null);
   insert.run('e2'.padEnd(64, '2'), PK_B, 1023, 2_000, 'reklamacna bola zamietnutá, lebo poistenie trvalo krátko', null);
   insert.run('e3'.padEnd(64, '3'), PK_B, 30023, 3_000, 'Sprievodca poistením a reklamáciami', `30023:${PK_B}:sprievodca`);
+  // F4AI-42: rows that carry their title in a tag, plus an event with no title
+  // at all. They share the token `negentropy` so a test can reach them without
+  // disturbing the BM25 ordering the other tests assert on.
+  const insertTagged = writer.prepare(
+    `INSERT INTO events (id, pubkey, kind, created_at, content, tags_json, tags_text, sig, addr, inserted_at)
+     VALUES (?, ?, ?, ?, ?, ?, '', 'sig', ?, 0)`,
+  );
+  insertTagged.run(
+    'e4'.padEnd(64, '4'),
+    PK_A,
+    30020,
+    4_000,
+    'negentropy topic description',
+    JSON.stringify([['d', 'negentropy-topic']]),
+    `30020:${PK_A}:negentropy-topic`,
+  );
+  insertTagged.run(
+    'e5'.padEnd(64, '5'),
+    PK_B,
+    30023,
+    5_000,
+    '# Negentropy body heading\n\ntext',
+    JSON.stringify([['title', 'Negentropy Gates: Replication and LWW']]),
+    `30023:${PK_B}:negentropy-gates`,
+  );
+  insertTagged.run(
+    'e6'.padEnd(64, '6'),
+    PK_A,
+    10030,
+    6_000,
+    '{"status":"claimed","note":"negentropy claim confirmed"}',
+    '[]',
+    `10030:${PK_A}:negentropy-claim`,
+  );
+  // F4AI-35: node mesh heartbeat. Indexer ho indexed (rozsah 30020-30029),
+  // ale do ľudského vyhľadávania nepatrí — test je na to, aby sme ho omylom
+  // nevrátili ako "príspevok".
+  insertTagged.run(
+    'e7'.padEnd(64, '7'),
+    PK_B,
+    30026,
+    7_000,
+    '{"software":"negentropy-node","role":"seed"}',
+    JSON.stringify([['d', 'f4ai-negentropy'], ['l', 'forum4ai.role', 'seed']]),
+    `30026:${PK_B}:f4ai-negentropy`,
+  );
   writer.close();
 }
 
@@ -262,6 +308,45 @@ describe('GET /search — úspešná odpoveď', () => {
     expect(addressedBody.results?.[0]?.['addr']).toBe(`30023:${PK_B}:sprievodca`);
     const plain = (await (await app.request('/search?q=poistka')).json()) as SearchBody;
     expect(plain.results?.[0]?.['addr']).toBeUndefined();
+  });
+
+  it('F4AI-42: every result carries the event title (content line, title tag, topic d slug)', async () => {
+    const res = await app.request('/search?q=negentropy');
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as SearchBody;
+    const byId = new Map((body.results ?? []).map((row) => [String(row['id']), row]));
+    expect(byId.size).toBe(3);
+    // a topic: its `d` slug — the name the sidebar and the URL use, so it
+    // wins over the description in `content`
+    expect(byId.get('e4'.padEnd(64, '4'))?.['title']).toBe('negentropy-topic');
+    // a paper: its `title` tag, not the heading in the body
+    expect(byId.get('e5'.padEnd(64, '5'))?.['title']).toBe('Negentropy Gates: Replication and LWW');
+    // a status event whose content is JSON: the label comes out of the object
+    expect(byId.get('e6'.padEnd(64, '6'))?.['title']).toBe('negentropy claim confirmed');
+    // the field is additive: the pre-existing fields are untouched
+    expect(Object.keys(byId.get('e4'.padEnd(64, '4')) ?? {})).toEqual(
+      expect.arrayContaining(['id', 'kind', 'pubkey', 'created_at', 'snippet', 'score', 'addr', 'title']),
+    );
+  });
+
+  // F4AI-35 (epic node mesh): kind 30026 je indexovaný (indexer berie rozsah
+  // 30020-30029), ale heartbeat uzla nie je diskusný príspevok. Default
+  // vyhľadávanie ho preto vylučuje; explicitné `kinds=` vyhráva.
+  it('F4AI-35: node heartbeat (30026) nie je obsah — defaultne sa nájde len na želanie', async () => {
+    const res = await app.request('/search?q=negentropy');
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as SearchBody;
+    const kinds = (body.results ?? []).map((row) => Number(row['kind']));
+    expect(kinds).not.toContain(30026);
+    // výluka nie je parameter klienta, preto sa v `filters` neobjaví
+    expect(JSON.stringify(body.filters ?? '')).not.toContain('exclude');
+
+    const explicit = await app.request('/search?q=negentropy&kinds=30026');
+    expect(explicit.status).toBe(200);
+    const chosen = (await explicit.json()) as SearchBody;
+    expect(chosen.results).toHaveLength(1);
+    expect(String(chosen.results?.[0]?.['id'])).toBe('e7'.padEnd(64, '7'));
+    expect(chosen.results?.[0]?.['kind']).toBe(30026);
   });
 
   it('BM25 poradie je súčasťou HTTP odpovede (kratší dokument s rovnakým tf vyhráva)', async () => {

@@ -1,0 +1,39 @@
+{
+  "title": "Einstellungen",
+  "subtitle": "Wer du bist, was für dich signiert und wer mit dir schreiben darf",
+  "relation": "Beziehung",
+  "write": {
+    "title": "Schreibrecht",
+    "allowedOperator": "Operator {{operator}}",
+    "allowedNoOperator": "Kein Operator",
+    "code": "Code:",
+    "via": "Über:",
+    "none": "(keiner)"
+  },
+  "members": {
+    "title": "Mitglieder und Agenten",
+    "ownerNote": "Du bist der Eigentümer der Instanz —",
+    "adminLink": "Operatorverwaltung",
+    "loading": "30028 wird geladen…",
+    "error": "Die 30028-Liste konnte nicht geladen werden:",
+    "writersTitle": "Schreiberliste (30028 d=forum4ai-writers)",
+    "writersEmpty": "Dein Schlüssel hat keine Schreiberliste veröffentlicht — das Gateway lässt dich schreiben, je nachdem, was das Schreibtor sieht.",
+    "agentsTitle": "Agenten (30028 d=agents)",
+    "agentsEmpty": "Keine Agenten — niemand darf in deinem Namen schreiben",
+    "fallback": "Keine Liste — wir sehen bisher nur die Schreibtor-Entscheidung oben.",
+    "published": "Veröffentlicht",
+    "listEmpty": "Die Liste ist leer",
+    "expiry": "Läuft ab {{time}}",
+    "expiryUnknown": "Ablauf unbekannt"
+  },
+  "roles": {
+    "member": "Mitglied",
+    "agent": "Agent"
+  },
+  "warnings": {
+    "badPTag": "Ein p-Tag mit ungültigem pubkey wurde übersprungen: {{pubkey}}…",
+    "empty": "(leer)",
+    "badExpiry": "Der Ablauf von {{pubkey}}… ist nicht lesbar ({{raw}})",
+    "unknownMarker": "Unbekannter Rollenmarker „{{marker}}“ für {{pubkey}}… — wir behandeln ihn als Agenten"
+  }
+}

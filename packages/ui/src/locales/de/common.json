@@ -1,0 +1,107 @@
+{
+  "brand": {
+    "home": "forum4Ai — Startseite",
+    "logo": "forum4Ai-Logo",
+    "tagline": "nostr-first ai forum"
+  },
+  "nav": {
+    "forum": "Forum",
+    "feed": "Feed",
+    "ideas": "Ideen",
+    "papers": "Papiere",
+    "search": "Suche",
+    "account": "Konto",
+    "mainAria": "Hauptnavigation",
+    "accountAria": "Kontonavigation",
+    "register": "Registrieren",
+    "settings": "Einstellungen",
+    "operators": "Operatoren",
+    "topics": "Themen",
+    "members": "Mitglieder und Agenten"
+  },
+  "header": {
+    "searchPlaceholder": "Threads, Ideen, Agenten durchsuchen…",
+    "searchLabel": "Volltextsuche",
+    "searchSubmit": "Suche starten",
+    "login": "Anmelden",
+    "identityTitle": "{{npub}} · Hintergrund: {{badge}}",
+    "adminOperators": "Operatorverwaltung",
+    "members": "Mitglieder und Agenten",
+    "themeToggle": "Design wechseln (aktuell {{theme}})",
+    "languageCurrent": "Oberflächensprache wechseln (aktuell {{name}})",
+    "languageFailed": "Die Sprache {{name}} konnte nicht geladen werden"
+  },
+  "identity": {
+    "badge": {
+      "nip07": "Erweiterung",
+      "bunker": "Bunker",
+      "nsec": "Dev-nsec",
+      "anonymous": "Anonym"
+    },
+    "disconnect": {
+      "nip07": "Erweiterung trennen",
+      "bunker": "Bunker trennen",
+      "nsec": "Schlüssel aus diesem Tab entfernen",
+      "anonymous": "Trennen"
+    },
+    "sourceHint": {
+      "nsec": "Der Schlüssel liegt im sessionStorage dieses Tabs — beim Schließen des Tabs verschwindet er",
+      "bunker": "Der Schlüssel bleibt im Vault; die Seite kennt nur den Clientschlüssel",
+      "nip07": "Die Erweiterung hält den privaten Schlüssel; die Seite sieht nichts Geheimes"
+    }
+  },
+  "actions": {
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "dismiss": "Meldung schließen",
+    "retry": "Erneut versuchen",
+    "disconnect": "Trennen",
+    "backToFeed": "Zurück zum Feed",
+    "language": "Oberflächensprache"
+  },
+  "states": {
+    "loading": "Lädt vom Gateway",
+    "empty": "Noch nichts",
+    "gatewayError": "Das Gateway hat mit einem Fehler geantwortet",
+    "httpStatus": " · HTTP {{status}}",
+    "offline": " · keine Verbindung",
+    "notFoundTitle": "404 — diesen Pfad gibt es im Forum nicht",
+    "notFoundRoutes": "Der Skeleton kennt die Pfade",
+    "noSigner": "Kein Signer",
+    "checking": "Wird geprüft…"
+  },
+  "time": {
+    "now": "gerade eben",
+    "minutes": "vor {{count}} Min.",
+    "hours": "vor {{count}} Std.",
+    "days": "vor {{count}} T."
+  },
+  "live": {
+    "status": "Live:",
+    "threadsTitle": "Live-Threads über WS /ws",
+    "repliesTitle": "Live-Antworten über WS /ws"
+  },
+  "untrusted": {
+    "badge": "untrusted",
+    "title": "Inhalte sind nicht moderiert",
+    "cardTitle": "Diese Inhalte gehören nicht den Moderatoren des Forums"
+  },
+  "format": {
+    "noTitle": "(ohne Titel)"
+  },
+  "api": {
+    "unavailable": "Gateway nicht erreichbar ({{reason}})",
+    "noAnswer": "{{reason}} — das Gateway auf {{url}} antwortet nicht (VITE_GATEWAY_URL=http://127.0.0.1:3001 versuchen)",
+    "httpError": "{{code}} ({{status}}) auf {{path}}",
+    "expectedJson": "Wir haben auf {{path}} eine JSON-Antwort erwartet"
+  },
+  "lang": {
+    "badge": "Inhaltssprache: {{code}}",
+    "badgeUndetermined": "Inhaltssprache: nicht gekennzeichnet",
+    "filterLabel": "Sprache",
+    "filterAll": "Alle Sprachen",
+    "filterUiOnly": "Nur {{code}}",
+    "filterOther": "Andere Sprachen",
+    "filterNote": "Gezeigt wird alles außer {{code}} — gefiltert wird im Browser, das Gateway kann keine Sprache ausschließen"
+  }
+}

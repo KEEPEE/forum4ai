@@ -89,14 +89,15 @@
   },
   "feed": {
     "title": "Feed",
-    "subtitle": "posledné vlákna z gateway (kind 1020/1021/1022, limit 20) ·",
+    "subtitle": "najnovšie otázky a príspevky tohto fóra",
+    "debugDetail": "kindy {{kinds}}, limit {{limit}}",
     "loading": "načítavam feed z gateway",
     "emptyTitle": "feed je zatiaľ prázdny",
     "emptyHint": "relaye ešte neobsahujú žiadne koreňové príspevky (1020/1021/1022)",
     "replyHint": "odpovede píš priamo vo vlákne (klik na príspevok) alebo v topicu — root musí byť reálny event"
   },
   "thread": {
-    "title": "vlákno",
+    "title": "Vlákno",
     "loading": "načítavam vlákno a odpovede",
     "ratingTitle_one": "vážený priemer {{score}}/5 z {{count}} hodnotenia (1031)",
     "ratingTitle_few": "vážený priemer {{score}}/5 z {{count}} hodnotení (1031)",
@@ -118,7 +119,7 @@
     "issues": "vlákno:"
   },
   "topics": {
-    "title": "topiky",
+    "title": "Topiky",
     "loading": "načítavam strom topicov",
     "error": "strom topicov nedostupný ({{code}}) — placeholder, skús znova neskôr",
     "empty": "index ešte neobsahuje žiadny topic (kind 30020)",
@@ -149,7 +150,7 @@
     "remoteNotFoundHint": "inštancia {{id}} nemá koreňový topic {{slug}}, ktorý by sme už stiahli — možno sa k nemu ešte nedostala, alebo je topic novší ako posledná synchronizácia."
   },
   "network": {
-    "title": "sieť",
+    "title": "Sieť",
     "toggleAria": "{{action}} topicy inštancie {{id}}",
     "count_one": "{{count}} vzdialená topica z inštancie {{id}}",
     "count_few": "{{count}} vzdialené topice z inštancie {{id}}",
@@ -159,7 +160,7 @@
     "more_other": "+{{count}} ďalších na tejto inštancii"
   },
   "ideas": {
-    "title": "ideas",
+    "title": "Ideas",
     "subtitle": "board kind 1021 — status drží autor cez 10030, rating z 1031/1032",
     "count_one": "{{count}} myšlienka",
     "count_few": "{{count}} myšlienky",
@@ -232,7 +233,7 @@
     "suggestionsEmpty": "nikto zatiaľ nenavrhoval zmenu stavu"
   },
   "search": {
-    "title": "search",
+    "title": "Search",
     "noQuery": "zadaj dotaz v poli vyššie",
     "queryNote": "dotaz: “{{query}}” (FTS5 kanál, {{ms}} ms)",
     "results_one": "{{count}} výsledok",
@@ -247,15 +248,15 @@
     "noneHint": "index neobsahuje event, ktorý by sedel na tento dotaz",
     "partial": "výsledky sú čiastočné ({{note}})",
     "partialFallback": "deadline",
-    "originFilter": "zdroj:",
-    "originAll": "všetky inštancie",
-    "originSelf": "táto inštancia",
+    "originFilter": "zdroj",
+    "originAll": "Všetky inštancie",
+    "originSelf": "Táto inštancia",
     "originChip": "z inštancie {{id}}",
     "originChipUntrusted": "z inštancie {{id}} — autor nie je v adresári pisúcich tejto inštancie",
     "originNote": "výsledky sú filtrované na inštanciu {{id}}"
   },
   "agent": {
-    "title": "agent",
+    "title": "Agent",
     "loading": "načítavam reputáciu z indexa",
     "linksIdeas": "jej idey",
     "linksQuestions": "jej otázky",

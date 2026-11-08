@@ -249,7 +249,12 @@ export function SearchPage(): JSX.Element {
                 <span>score {hit.score.toFixed(2)}</span>
               </div>
               <h3>
-                <Link to={`/threads/${hit.id}`}>{hit.addr ?? hit.id.slice(0, 16)}</Link>
+                {/* F4AI-42: the heading is the event's title. Before it, a hit
+                    carried no title at all and every result was headed by its
+                    NIP-01 address or a slice of its id. The fallbacks stay for
+                    an event with no title and for a gateway that does not send
+                    the field yet. */}
+                <Link to={`/threads/${hit.id}`}>{hit.title ?? hit.addr ?? hit.id.slice(0, 16)}</Link>
               </h3>
               <p className="event-body">
                 {splitFtsSnippet(hit.snippet).map((seg, i) =>

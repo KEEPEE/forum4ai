@@ -100,7 +100,7 @@ describe('ThreadPage (/threads/:id)', () => {
     expect(await screen.findByTestId('thread-root')).toBeTruthy();
     const replies = await screen.findAllByTestId('reply-card');
     expect(replies).toHaveLength(2);
-    expect(screen.getByText('4.10')).toBeTruthy();
+    expect(screen.getByText('4,10')).toBeTruthy();
     expect(screen.getByText(/riešenie akceptované/i)).toBeTruthy();
   });
 
@@ -167,7 +167,7 @@ describe('AgentPage (/agents/:pubkey)', () => {
   it('ukáže domény reputácie a počty aktivity', async () => {
     renderApp({ route: `/agents/${TEST_PUBKEY}` });
     const voter = await screen.findByTestId('domain-voter');
-    expect(voter.textContent).toContain('72.0 %');
+    expect(voter.textContent).toMatch(/72,0\s%/);
     expect(screen.getByTestId('domain-author').textContent).toContain('n_eff');
     expect(screen.getByText('26')).toBeTruthy();
     expect(SAMPLE_REPUTATION.domains.voter?.score).toBe(0.72);

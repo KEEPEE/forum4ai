@@ -3,6 +3,10 @@
  *
  * The search box and the identity display stay unchanged. Two things changed:
  *
+ *  - **F4AI-43:** the language switcher is no longer a pair of `EN`/`SK`
+ *    buttons — it is `<LanguageMenu />`, a themed dropdown whose item list comes
+ *    from the `SUPPORTED_LANGUAGES` registry (see `LanguageMenu.tsx`).
+ *
  *  - **Phase 3a:** the two-button theme toggle became a segmented switch of three
  *    themes (`glass-dark` / `glass-light` / `nexaverse`). The group keeps
  *    `data-testid="theme-toggle"`, and a click on the group's free space cycles
@@ -41,11 +45,11 @@ import {
   readTheme,
   type ThemeName,
 } from '../lib/theme.js';
-import { SUPPORTED_LANGS, changeAppLanguage, type AppLang } from '../i18n/index.js';
 import { LoginModal } from './LoginModal.js';
+import { LanguageMenu } from './LanguageMenu.js';
 
 export function Header(): JSX.Element {
-  const { t, i18n: messages } = useTranslation('common');
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
   const { identity, disconnect } = useIdentity();
   const owner = useOwner();
@@ -63,12 +67,6 @@ export function Header(): JSX.Element {
   useEffect(() => {
     setMenuOpen(false);
   }, [identity?.pubkey]);
-
-  // prepínač jazyka (dizajn Q2): i18n bez reloadu + perzistencia do
-  // `localStorage.forum4ai_lang` + `<html lang>` (detector ho sám nerieši)
-  function switchLanguage(code: AppLang): void {
-    void changeAppLanguage(code, messages);
-  }
 
   // Phase 3a: klik na PRIAMY segment nastaví tému; klik na voľný priestor
   // skupiny (alebo bublajúci klik bez zastavenia) ju prepne dokola — to je
@@ -193,7 +191,7 @@ export function Header(): JSX.Element {
 
         {/* Phase 3a: 3 témy. Skupina má `data-testid="theme-toggle"` a
             klik na jej pozadie cykluje (staré správanie toggle), segmenty
-            volia tému priamo. `aria-pressed` hovorí, ktorý jazyk je aktívny. */}
+            volia tému priamo. `aria-pressed` hovorí, ktorá téma je aktívna. */}
         <div
           className="theme-switch"
           role="group"
@@ -219,25 +217,9 @@ export function Header(): JSX.Element {
           ))}
         </div>
 
-        {/* jazyk rozhrania (Phase 2a) — EN je default, SK sa načíta lazy */}
-        <div className="lang-switch" role="group" aria-label={t('actions.language')} data-testid="lang-switch">
-          {SUPPORTED_LANGS.map((code) => (
-            <button
-              key={code}
-              type="button"
-              className="theme-toggle"
-              lang={code}
-              aria-pressed={messages.resolvedLanguage === code}
-              title={t('actions.languageOption', { code: code.toUpperCase(), label: t(`actions.languageNames.${code}`) })}
-              data-testid={`lang-${code}`}
-              onClick={() => {
-                switchLanguage(code);
-              }}
-            >
-              {code.toUpperCase()}
-            </button>
-          ))}
-        </div>
+        {/* interface language (F4AI-43) — a themed dropdown instead of the old
+            EN/SK button pair; the list is the `SUPPORTED_LANGUAGES` registry */}
+        <LanguageMenu />
       </div>
 
       {loginOpen && (

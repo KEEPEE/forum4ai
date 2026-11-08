@@ -38,6 +38,7 @@ class FakeRelay implements RelayLike {
   readonly url: string;
   connected = true;
   closed = false;
+  published = 0;
   onclose: (() => void) | null = null;
   readonly subs: { key: string; filters: Filter[]; handlers: SubscribeHandlers }[] = [];
   private readonly publishImpl: (event: Event) => Promise<string>;
@@ -49,6 +50,7 @@ class FakeRelay implements RelayLike {
 
   async publish(event: Event): Promise<string> {
     if (!this.connected) throw new Error('Tried to send message on a closed connection');
+    this.published += 1;
     return this.publishImpl(event);
   }
 
@@ -562,5 +564,129 @@ describe('subscribe s onEose (S5 WS)', () => {
     (f.created[0] as FakeRelay)?.emitEvent(ev('9'.repeat(64)));
     (f.created[0] as FakeRelay)?.emitEose();
     expect(seen).toEqual(['9'.repeat(64)]);
+  });
+});
+
+// ── F4AI-38: relaye objavené discovery (write:false, odstraňovateľné) ─────
+
+describe('F4AI-38 discovered relays (add flags, remove, read/write fan-out)', () => {
+  const URL_D = 'wss://discovered.example';
+
+  it('add({write:false, discovered:true}) marks the entry and keeps it out of writeUrls', async () => {
+    const f = factory();
+    pool = new RelayPool({ urls: [URL_A], connector: f.connector });
+    pool.add(URL_D, { write: false, discovered: true });
+    await pool.connectAll();
+
+    const status = pool.status();
+    expect(status).toHaveLength(2);
+    const own = status.find((s) => s.url === `${URL_A}/`);
+    const disc = status.find((s) => s.url === `${URL_D}/`);
+    expect(own?.write).toBe(true);
+    expect(own?.discovered).toBe(false);
+    expect(disc?.write).toBe(false);
+    expect(disc?.discovered).toBe(true);
+
+    expect(pool.writeUrls()).toEqual([`${URL_A}/`]);
+    expect(pool.discoveredUrls()).toEqual([`${URL_D}/`]);
+    expect(pool.urls).toEqual([`${URL_A}/`, `${URL_D}/`]);
+  });
+
+  it('publish() never writes through a write:false relay, even when the caller names it', async () => {
+    const f = factory();
+    pool = new RelayPool({ urls: [URL_A], connector: f.connector });
+    pool.add(URL_D, { write: false, discovered: true });
+    await pool.connectAll();
+    const relays = f.created as FakeRelay[];
+    const disc = relays.find((r) => r.url === `${URL_D}/`) as FakeRelay;
+
+    const results = await pool.publish(ev('1'.repeat(64)));
+    expect(results.map((r) => r.url)).toEqual([`${URL_A}/`]);
+    expect(disc.published).toBe(0);
+
+    // `write:false` is a promise, not a default the caller may overrule. The
+    // caller here is the author's NIP-65 outbox, and honouring it would send
+    // user content to a host discovery learned from a stranger's announcement —
+    // a data-flow decision the operator never made.
+    const named = await pool.publish(ev('2'.repeat(64)), [URL_D]);
+    expect(named.map((r) => r.url)).toEqual([`${URL_A}/`]);
+    expect(disc.published).toBe(0);
+  });
+
+  it('read fan-out uses discovered relays only as failover (default)', async () => {
+    const f = factory();
+    pool = new RelayPool({ urls: [URL_A], connector: f.connector });
+    pool.add(URL_D, { write: false, discovered: true });
+    await pool.connectAll();
+
+    expect(pool.readUrls()).toEqual([`${URL_A}/`]);
+
+    const own = f.created.find((r) => r.url === `${URL_A}/`) as FakeRelay;
+    own.connected = false; // configured relay down → discovered takes reads
+    expect(pool.readUrls()).toEqual([`${URL_A}/`, `${URL_D}/`]);
+  });
+
+  it('discoveredReads:"never" keeps discovered relays out of reads and subs', async () => {
+    const f = factory();
+    pool = new RelayPool({ urls: [URL_A], connector: f.connector, discoveredReads: 'never' });
+    pool.add(URL_D, { write: false, discovered: true });
+    await pool.connectAll();
+
+    expect(pool.readUrls()).toEqual([`${URL_A}/`]);
+    pool.subscribe([{ kinds: [1020] }], () => undefined);
+    const relays = f.created as FakeRelay[];
+    const disc = relays.find((r) => r.url === `${URL_D}/`) as FakeRelay;
+    expect(disc.subs).toHaveLength(0);
+    expect((relays.find((r) => r.url === `${URL_A}/`) as FakeRelay).subs).toHaveLength(1);
+  });
+
+  it('discoveredReads:"always" fans reads and subs out to discovered relays', async () => {
+    const f = factory();
+    pool = new RelayPool({ urls: [URL_A], connector: f.connector, discoveredReads: 'always' });
+    pool.add(URL_D, { write: false, discovered: true });
+    await pool.connectAll();
+
+    expect(pool.readUrls()).toEqual([`${URL_A}/`, `${URL_D}/`]);
+    pool.subscribe([{ kinds: [1020] }], () => undefined);
+    const relays = f.created as FakeRelay[];
+    expect((relays.find((r) => r.url === `${URL_D}/`) as FakeRelay).subs).toHaveLength(1);
+  });
+
+  it('remove() drops the relay, closes it and detaches its subscriptions', async () => {
+    const f = factory();
+    pool = new RelayPool({ urls: [URL_A], connector: f.connector, discoveredReads: 'always' });
+    pool.add(URL_D, { write: false, discovered: true });
+    await pool.connectAll();
+
+    const seen: string[] = [];
+    pool.subscribe([{ kinds: [1020] }], (event) => { seen.push(event.id); });
+    const relays = f.created as FakeRelay[];
+    const disc = relays.find((r) => r.url === `${URL_D}/`) as FakeRelay;
+    expect(disc.subs).toHaveLength(1);
+
+    expect(pool.remove(URL_D)).toBe(true);
+    expect(disc.closed).toBe(true);
+    expect(disc.subs).toHaveLength(0);
+    expect(pool.urls).toEqual([`${URL_A}/`]);
+    expect(pool.discoveredUrls()).toEqual([]);
+
+    // objavený relay už do čítaní nevstupuje
+    const events = await pool.query([{ kinds: [1020] }], { timeoutMs: 50 });
+    expect(events).toHaveLength(0);
+    expect(pool.remove(URL_D)).toBe(false);
+    expect(pool.remove('not a url')).toBe(false);
+  });
+
+  it('pool without discovered relays behaves exactly as before (back-compat)', async () => {
+    const f = factory();
+    pool = new RelayPool({ urls: [URL_A, URL_B], connector: f.connector });
+    await pool.connectAll();
+
+    expect(pool.writeUrls()).toEqual(pool.urls);
+    expect(pool.readUrls()).toEqual(pool.urls);
+    expect(pool.discoveredUrls()).toEqual([]);
+    const results = await pool.publish(ev('3'.repeat(64)));
+    expect(results).toHaveLength(2);
+    expect(results.every((r) => r.ok)).toBe(true);
   });
 });

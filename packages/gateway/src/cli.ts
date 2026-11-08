@@ -41,6 +41,7 @@ async function runGateway(): Promise<void> {
     operators,
     register,
     fed,
+    node,
   } = buildGateway();
 
   console.log(
@@ -151,6 +152,38 @@ async function runGateway(): Promise<void> {
     maintenanceTimer.unref();
   }
 
+  // F4AI-36: heartbeat kind 30026. Sme tu len keď rola oznamuje (default
+  // NIE — inštancia bez nových env nepublikuje ani jeden event navyše).
+  console.log(
+    `node role: ${node.config.role} (announce=${node.config.announce ? 'on' : 'off'}, ` +
+      `upstreams=${node.config.upstreamsMode}, key=${node.config.nodeSkSource})`,
+  );
+  if (node.announcer !== null) {
+    node.announcer.start();
+    console.log(
+      `  announce: node ${node.announcer.nodeId} as ${node.config.role}, ` +
+        `every ${String(Math.round(node.config.heartbeatMs / 1000))}s, TTL ${String(node.config.announceTtlS)}s`,
+    );
+  }
+
+  // F4AI-37/38: timer adresára beží LEN keď fan-out existuje (legacy inštancia
+  // nesmie otvoriť jediné spojenie navyše).
+  if (node.directory.fanOut) {
+    node.directory.start();
+    console.log(`  nodes: GET /nodes fans out to upstreams every 60s (one hop, raw + re-verified)`);
+  } else {
+    console.log('  nodes: GET /nodes serves this instance relays only (set NODE_ROLE to join the mesh)');
+  }
+
+  // F4AI-38: auto-discovery. Existuje a beží LEN pri NODE_UPSTREAMS=auto —
+  // inak sa pool nikdy nedozvie relay, ktorý mu nikto neposkytol.
+  if (node.discovery !== null) {
+    node.discovery.start();
+    console.log(
+      '  discovery: NODE_UPSTREAMS=auto — read-only relays from upstream /nodes, every 120s (cap 8, DNS-verified)',
+    );
+  }
+
   const gateway = await startGatewayServer(app, {
     port: config.port,
     hostname: config.host,
@@ -180,25 +213,44 @@ async function runGateway(): Promise<void> {
   console.log(
     '  FED  GET /fed/events?since=&limit=&kinds= (peer read) · GET /fed/topics · GET /fed/state (NIP-98) · POST /fed/resync/:id (NIP-98)',
   );
+  console.log(
+    '  MESH GET /nodes?role=&limit= · GET /nodes?local=1&raw=1 (peer) · GET /nodes/status — node directory (kind 30026)',
+  );
 
   const shutdown = (signal: string): void => {
     console.log(`\n${signal} — closing the gateway`);
     if (maintenanceTimer !== null) clearInterval(maintenanceTimer);
-    outbox.invalidate();
-    pool.close();
-    // read-only SQLite spojenia (WAL súbory musia ísť dole korektne)
-    search?.close();
-    reputation?.close();
-    // P1: JEDINÝ writer do operators.db je gateway — WAL musí ísť dole
-    // korektne, iný proces (indexer) ju číta read-only
-    operators.close();
-    // Phase 6a: `fed.db` je tretia gateway-owned DB (kurzory upstreamov,
-    // remote eventy, push fronta). Indexer ju číta read-only, takže WAL
-    // body a journal musia ísť dole pred exitom — a timer PULL/PUSH kolečka
-    // musí zastať, inak by proces visel na intervale.
-    fed.close();
-    void gateway.close().then(() => process.exit(0));
-    setTimeout(() => process.exit(0), 2_000).unref();
+    // F4AI-36: korektné vypnutie = tombstone `offline`, KÍM ešte máme
+    // pripojené relaye (inak by uzol v adresári visel do TTL). Je viazaný
+    // časovo, takže mŕtvy relay nespôsobí, že proces bude končiť donekonečna.
+    void (async () => {
+      try {
+        await node.announcer?.stop(1_500);
+      } catch {
+        /* tombstone je best-effort */
+      }
+      node.discovery?.stop();
+      node.directory.stop();
+      outbox.invalidate();
+      pool.close();
+      // read-only SQLite spojenia (WAL súbory musia ísť dole korektne)
+      search?.close();
+      reputation?.close();
+      // P1: JEDINÝ writer do operators.db je gateway — WAL musí ísť dole
+      // korektne, iný proces (indexer) ju číta read-only
+      operators.close();
+      // Phase 6a: `fed.db` je tretia gateway-owned DB (kurzory upstreamov,
+      // remote eventy, push fronta). Indexer ju číta read-only, takže WAL
+      // body a journal musia ísť dole pred exitom — a timer PULL/PUSH kolečka
+      // musí zastať, inak by proces visel na intervale.
+      fed.close();
+      await gateway.close();
+      process.exit(0);
+    })().catch((err: unknown) => {
+      console.log(`shutdown failed: ${err instanceof Error ? err.message : String(err)}`);
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(0), 4_000).unref();
   };
 
   process.on('SIGINT', () => shutdown('SIGINT'));

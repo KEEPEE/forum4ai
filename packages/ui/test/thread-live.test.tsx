@@ -83,7 +83,7 @@ describe('ThreadPage — rating + accepted z live fixture (1031/1032)', () => {
   it('rating badge ukáže priemer a počet, accepted pill pri rating.accepted', async () => {
     renderThread(LIVE_THREAD_ACCEPTED);
     const badge = await screen.findByTestId('thread-rating-badge');
-    expect(badge.textContent).toContain('4.00/5');
+    expect(badge.textContent).toContain('4,00/5');
     expect(badge.textContent).toContain('1×');
     const pill = await screen.findByTestId('thread-accepted-pill');
     expect(pill.textContent).toContain('akceptované');

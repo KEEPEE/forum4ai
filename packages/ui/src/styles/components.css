@@ -26,6 +26,12 @@
    ========================================================================== */
 .site-header {
 	position: relative;
+	/* the header is a `.glass-panel`, so its `backdrop-filter` gives it a
+	   stacking context: without an explicit z-index everything inside it (the
+	   account menu, the language menu) paints UNDER `<main>`, because main
+	   simply comes later in the DOM. 20 is above the content (max 10) and below
+	   the modal layer (60/100). F4AI-43 review P0. */
+	z-index: 20;
 	padding: 16px 22px;
 	gap: 18px;
 	border-radius: var(--radius-tile);
@@ -114,11 +120,10 @@
 }
 
 /* ===== 3-way theme switcher (Phase 3a) =====
-   Segmented control in the `.theme-toggle` family (the language switcher
-   uses it too). The active segment gets a gradient fill + glow, the others
-   only a border. `data-testid="theme-toggle"` sits on the GROUP: clicking
-   free space in the group cycles the themes (backwards compatible with the
-   original toggle). */
+   Segmented control in the `.theme-toggle` family. The active segment gets a
+   gradient fill + glow, the others only a border. `data-testid="theme-toggle"`
+   sits on the GROUP: clicking free space in the group cycles the themes
+   (backwards compatible with the original toggle). */
 .theme-switch {
 	display: inline-flex;
 	align-items: center;
@@ -130,19 +135,7 @@
 	box-shadow: inset 0 1px 3px color-mix(in srgb, var(--bg-0) 45%, transparent);
 }
 
-/* the language switcher (Phase 2a) is a visual sibling — same group, so
-   side by side they read as a single control */
-.lang-switch {
-	gap: 3px;
-	padding: 3px;
-	border-radius: var(--radius-pill);
-	border: 1px solid var(--glass-border);
-	background: var(--surface-sunken);
-	box-shadow: inset 0 1px 3px color-mix(in srgb, var(--bg-0) 45%, transparent);
-}
-
-.theme-switch .theme-toggle,
-.lang-switch .theme-toggle {
+.theme-switch .theme-toggle {
 	position: relative;
 	gap: 6px;
 	padding: 6px 11px;
@@ -154,23 +147,14 @@
 	color: var(--text-muted);
 }
 
-.lang-switch .theme-toggle {
-	font-family: var(--font-display);
-	font-size: 11px;
-	letter-spacing: 1.4px;
-	padding: 6px 10px;
-}
-
-.theme-switch .theme-toggle:hover,
-.lang-switch .theme-toggle:hover {
+.theme-switch .theme-toggle:hover {
 	color: var(--text-1);
 	border-color: var(--glass-border);
 	background: var(--glass-bg-hover);
 	box-shadow: none;
 }
 
-.theme-switch .theme-toggle[aria-pressed='true'],
-.lang-switch .theme-toggle[aria-pressed='true'] {
+.theme-switch .theme-toggle[aria-pressed='true'] {
 	color: var(--on-accent);
 	border-color: transparent;
 	background: linear-gradient(135deg, var(--accent-fill-1), var(--accent-fill-2));
@@ -181,6 +165,173 @@
 .theme-switch .theme-toggle>span[aria-hidden='true'] {
 	font-size: 14px;
 	line-height: 1;
+}
+
+/* ===== Language menu (F4AI-43) =====
+   The EN/SK button pair became a dropdown. The trigger is a pill in the same
+   family as the theme switch (flag + code + caret), the popover reuses the
+   account-menu look — both are built from tokens only, so glass-dark,
+   glass-light and nexaverse restyle them without a single extra rule.
+   The keyboard highlight is `[data-active]`, NOT `:focus`: the menu element
+   owns the focus and `aria-activedescendant`, the items are not tab stops. */
+.lang-menu-wrap {
+	position: relative;
+	display: inline-flex;
+}
+
+.lang-trigger {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 7px 12px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-border);
+	background: var(--surface-sunken);
+	box-shadow: inset 0 1px 3px color-mix(in srgb, var(--bg-0) 45%, transparent);
+	font-family: var(--font-display);
+	font-size: 11px;
+	letter-spacing: 1.4px;
+	color: var(--text-2);
+	transition:
+		color var(--dur-med) ease,
+		border-color var(--dur-med) ease,
+		background var(--dur-med) ease,
+		box-shadow var(--dur-med) ease;
+}
+
+.lang-trigger:hover {
+	color: var(--text-1);
+	border-color: var(--primary);
+	box-shadow: 0 0 18px -6px var(--glow-primary);
+}
+
+/* open ≠ selected: the filled gradient would make the trigger look like a
+   pressed toggle next to the theme switch, so "open" borrows the hover
+   treatment (accent border + glow) and only tints the surface (F4AI-43 P2) */
+.lang-trigger[aria-expanded='true'] {
+	color: var(--text-1);
+	border-color: var(--primary);
+	background: var(--glass-bg-accent);
+	box-shadow:
+		0 0 18px -6px var(--glow-primary),
+		inset 0 1px 3px color-mix(in srgb, var(--bg-0) 45%, transparent);
+}
+
+.lang-flag {
+	font-size: 15px;
+	line-height: 1;
+	letter-spacing: 0;
+}
+
+.lang-caret {
+	font-size: 9px;
+	line-height: 1;
+	opacity: 0.75;
+	transition: transform var(--dur-med) var(--ease-pop);
+}
+
+.lang-trigger[aria-expanded='true'] .lang-caret {
+	transform: rotate(180deg);
+}
+
+.lang-menu {
+	position: absolute;
+	top: calc(100% + 8px);
+	inset-inline-end: 0;
+	z-index: 30;
+	/* `max-content`: the popover hangs off a 31px-wide wrapper, so without this
+	   it would never grow and a longer endonym ("Bahasa Indonesia") would wrap
+	   the moment someone adds a fourth language */
+	width: max-content;
+	min-width: 236px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px;
+	border-radius: var(--radius-card);
+	border: 1px solid var(--glass-border);
+	background: var(--surface-3);
+	box-shadow: var(--shadow-5), var(--shadow-inset-hairline);
+	backdrop-filter: blur(var(--blur-glass-lg)) saturate(var(--saturate-glass));
+	-webkit-backdrop-filter: blur(var(--blur-glass-lg)) saturate(var(--saturate-glass));
+	animation: forum-pop-in var(--dur-med) var(--ease-pop);
+}
+
+/* the menu element is a keyboard container, not a control — the ring belongs to
+   the highlighted item, so the container itself stays quiet */
+.lang-menu:focus,
+.lang-menu:focus-visible {
+	outline: none;
+}
+
+.lang-menu-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 9px 10px;
+	border-radius: var(--radius-sm);
+	/* `--text-dim` on the near-black popover sat under 4.5:1 in the dark
+	   themes (F4AI-43 review P1) — the endonym is the primary text here */
+	color: var(--text-2);
+	font-size: var(--fs-sm);
+	text-align: start;
+	transition:
+		background var(--dur-fast) ease,
+		color var(--dur-fast) ease,
+		box-shadow var(--dur-fast) ease;
+}
+
+.lang-name {
+	white-space: nowrap;
+}
+
+.lang-menu-item:hover,
+.lang-menu-item[data-active='true'] {
+	background: var(--glass-bg-accent);
+	color: var(--primary);
+}
+
+/* the visible focus indicator for keyboard users */
+.lang-menu-item[data-active='true'] {
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 60%, transparent);
+}
+
+.lang-menu-item[aria-checked='true'] {
+	color: var(--text-1);
+	font-weight: 600;
+}
+
+.lang-menu-item .lang-code {
+	margin-inline-start: auto;
+	font-family: var(--font-mono);
+	font-size: 11px;
+	letter-spacing: 1px;
+	color: var(--text-2);
+}
+
+.lang-check {
+	min-width: 14px;
+	font-size: 13px;
+	line-height: 1;
+	color: var(--primary);
+}
+
+/* a locale chunk that failed to load says so instead of silently keeping the
+   old language — `role="status"`, so a screen reader reads it too */
+.lang-failed {
+	position: absolute;
+	top: calc(100% + 6px);
+	inset-inline-end: 0;
+	z-index: 31;
+	width: max-content;
+	max-width: 250px;
+	padding: 6px 10px;
+	border-radius: var(--radius-sm);
+	border: 1px solid color-mix(in srgb, var(--error) 55%, transparent);
+	background: var(--surface-3);
+	box-shadow: var(--shadow-3);
+	font-size: var(--fs-xs);
+	color: var(--error);
 }
 
 /* ===== Identity chip + account menu ===== */
@@ -384,6 +535,16 @@
 .page-subtitle {
 	font-size: var(--fs-md);
 	color: var(--text-muted);
+}
+
+/* F4AI-41: technical detail line (kinds, limit, WS state) — visible only
+   behind the debug flag, so it reads as diagnostics, not as page copy. */
+.page-subtitle-tech {
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	letter-spacing: 0.6px;
+	opacity: 0.75;
+	margin-top: 4px;
 }
 
 .breadcrumbs {

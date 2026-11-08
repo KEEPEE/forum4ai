@@ -75,6 +75,17 @@ export const KINDS = {
   AGENT_CARD: 30027,
   NODE_DIRECTORY: 30028,
   TOPIC_MEMBERS: 30029,
+  /**
+   * Node mesh announcement (F4AI-36, epic F4AI-35): one addressable event
+   * per node, `d = "f4ai-" + node_pubkey[0:16]`, refreshed by a ~60 s
+   * heartbeat. It sits inside the 30020–30029 block that already-deployed
+   * relays accept and indexers index, so a node can upgrade alone.
+   *
+   * Deliberately NOT the NIP-66 relay-health kind 30166: that one is
+   * per-relay probes signed by the relay's own key, and a node announcement
+   * is per-node, signed by the node key. Schema + sanitizers: `nodes.ts`.
+   */
+  NODE_ANNOUNCE: 30026,
   OUTBOX: 30002,
   PARAMS: 30400,
   SNAPSHOT: 30401,
@@ -103,6 +114,7 @@ export const ADDRESSABLE_KINDS: ReadonlySet<number> = new Set<number>([
   KINDS.PUBLICATION,
   KINDS.AGENT_CARD,
   KINDS.NODE_DIRECTORY,
+  KINDS.NODE_ANNOUNCE,
   KINDS.TOPIC_MEMBERS,
   KINDS.OUTBOX,
   KINDS.PARAMS,

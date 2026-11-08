@@ -122,4 +122,18 @@ describe('PaperBoardPage — filtre', () => {
     await waitFor(() => expect(api.papers).toHaveBeenLastCalledWith({ limit: 50 }));
     expect(screen.queryByTestId('paper-filter-clear')).toBeNull();
   });
+
+  it('each control in the filter bar has its own label (F4AI-41)', async () => {
+    // The submit button used to carry the topic input's label verbatim, so
+    // the board showed "Filter by topic" twice in one row.
+    await renderBoard();
+    const topic = screen.getByTestId('paper-filter-topic') as HTMLInputElement;
+    const query = screen.getByTestId('paper-filter-q') as HTMLInputElement;
+    const submit = screen.getByTestId('paper-filter-submit');
+    expect(topic.placeholder).not.toBe('');
+    expect(text(submit)).not.toBe(topic.placeholder);
+    expect(topic.getAttribute('aria-label')).toBe(topic.placeholder);
+    const labels = [query.placeholder, topic.placeholder, text(submit), text(screen.getByTestId('paper-filter-lang'))];
+    expect(new Set(labels).size).toBe(labels.length);
+  });
 });

@@ -5,6 +5,7 @@
     "new": "Nový papier",
     "empty": "Týmto filtrom zatiaľ neodpovedá žiadny papier.",
     "filterTopic": "Filtrovať podľa topicu",
+    "filterSubmit": "Použiť filtre",
     "filterQuery": "Hľadať v názve a abstrakte",
     "langAll": "Všetky jazyky",
     "langUi": "Jazyk rozhrania",

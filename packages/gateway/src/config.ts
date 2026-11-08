@@ -178,6 +178,12 @@ import {
   type FedDb,
   type FedUpstreamConfig,
 } from './fed/index.js';
+import { NodeAnnouncer } from './node-announce.js';
+import { NodeDirectory } from './node-directory.js';
+import { NodeDiscovery } from './node-discovery.js';
+import { resolveNodeConfig, type NodeConfig } from './node-config.js';
+import { registerNodeRoutes } from './node-routes.js';
+import { createIndexTopicProvider, type IndexTopicProvider } from './node-topics.js';
 import { OutboxWriter } from './outbox.js';
 import { contentLangPolicy, type ContentLangPolicy } from './content-lang.js';
 import { openOperatorsDb, type OperatorsDb } from './operators-db.js';
@@ -361,6 +367,14 @@ export interface GatewayConfig {
   upstreamGateways: FedUpstreamConfig[];
   /** Phase 6a: čo sme z `GATEWAY_UPSTREAM_GATEWAYS` zahodili a prečo */
   upstreamWarnings: string[];
+  /**
+   * F4AI-39 (epic F4AI-35): rola uzla a z nej odvodené schopnosti. JEDINÉ
+   * miesto, kde `NODE_ROLE` / `NODE_ANNOUNCE` / `NODE_UPSTREAMS` rozhodujú o
+   * správaní inštancie — `buildGateway` z neho len číta. Bez nových env je
+   * to `hub` + `announce: false` + `upstreams: manual`, teda presne súčasné
+   * správanie (žiadne nové spojenie, žiadny nový event).
+   */
+  node: NodeConfig;
   /** Phase 6a: `GATEWAY_FED_DB` — vlastná DB gatewaya (default `:memory:`) */
   fedDb: string;
   /** Phase 6a: perioda PULL+PUSH kolečka (0 = bez timeru) */
@@ -438,6 +452,11 @@ export function resolveGatewayConfig(
     env['GATEWAY_UPSTREAM_GATEWAYS'] ?? '',
     env['GATEWAY_UPSTREAM_IDS'] ?? '',
   );
+  // F4AI-39: rola uzla. `NODE_UPSTREAMS=off` zruší federáciu bez ohľadu na
+  // `GATEWAY_UPSTREAM_GATEWAYS` (statická konfigurácia ostáva nepoužitá),
+  // `manual` (default) ju necháva presne takú, aká bola doteraz.
+  const node = resolveNodeConfig(env);
+  const upstreamGateways = node.upstreamsMode === 'off' ? [] : fed.upstreams;
 
   return {
     relayUrls,
@@ -491,8 +510,9 @@ export function resolveGatewayConfig(
     // Phase 6a: federácia. Všetky defaulty platia aj pri PRÁZDNYCH env —
     // engine sa pri prázdnych upstreamoch vôbec nespúšťa, takže hodnoty
     // sú len diagnostika pre `GET /fed/state`.
-    upstreamGateways: fed.upstreams,
+    upstreamGateways,
     upstreamWarnings: fed.warnings,
+    node,
     fedDb: env['GATEWAY_FED_DB']?.trim() || ':memory:',
     fedIntervalMs: num(env, 'GATEWAY_FED_INTERVAL_MS', FED_INTERVAL_MS_DEFAULT),
     fedPullLimit: num(env, 'GATEWAY_FED_PULL_LIMIT', FED_PULL_LIMIT_DEFAULT),
@@ -562,6 +582,24 @@ export interface GatewayRuntime {
    * Federácia je vypnutá, keď `config.upstreamGateways` je prázdne — then
    * `engine.enabled === false` a `db` je `:memory:` bez zápisu.
    */
+  /**
+   * F4AI-36/39 (epic F4AI-35): rola uzla, heartbeat announcement a provider
+   * topicov, ktoré announcement inzeruje. `announcer` je null, ak uzol
+   * neoznamuje (default) alebo nemá node kľúč — then inštancia nepublikuje
+   * ani jeden event navyše (zpätná kompatibilita je zákon).
+   */
+  node: {
+    config: NodeConfig;
+    announcer: NodeAnnouncer | null;
+    directory: NodeDirectory;
+    /**
+     * F4AI-38: auto-discovery. `null` unless `NODE_UPSTREAMS=auto` — in every
+     * other mode the instance never adds a relay it was not told about, which
+     * is the whole point of the manual default.
+     */
+    discovery: NodeDiscovery | null;
+    topics: IndexTopicProvider;
+  };
   fed: FedRuntime;
 }
 
@@ -693,6 +731,10 @@ export function buildGateway(
   const fedEngine = new FedEngine({
     db: fedDb,
     upstreams: fedUpstreams,
+    // F4AI-39: seed PULLuje, ale nikdy nepushuje späť; client/writer majú
+    // obe smery vypnuté. Default (hub) má obe zapnuté = bez zmeny správania.
+    pullEnabled: config.node.capabilities.fedPull,
+    pushEnabled: config.node.capabilities.fedPush,
     kinds: config.fedKinds,
     pullLimit: config.fedPullLimit,
     pushBatch: config.fedPushBatch,
@@ -705,6 +747,9 @@ export function buildGateway(
   });
   fedEngine.syncConfig();
   for (const warning of config.upstreamWarnings) logger(`[fed] GATEWAY_UPSTREAM_GATEWAYS: ${warning}`);
+  // F4AI-39: preklep v novej premennej nesmie rozhodiť existujúcu inštanciu —
+  // zahodenú hodnotu len nahlásime (a `GET /health` ukáže efektívnu rolu).
+  for (const warning of config.node.warnings) logger(`[node] ${warning}`);
 
   // A6 (P0): siete dôveryhodných proxy (CIDR). Prázdne = stará semantika.
   const trustedProxies: readonly Cidr[] = parseCidrList(config.trustedProxiesRaw);
@@ -722,6 +767,51 @@ export function buildGateway(
           logger,
         })
       : null;
+
+  // ── node mesh (F4AI-36/39) ───────────────────────────────────────────────
+  // Heartbeat kind 30026. Vzniká LEN keď rola oznamuje a máme node kľúč;
+  // inak je `runtime.node.announcer` null a inštancia nepublikuje jediný
+  // event navyše (zpätná kompatibilita je zákon).
+  const nodeTopics = createIndexTopicProvider({
+    path: indexDbPath ?? null,
+    logger,
+  });
+  const announcer =
+    config.node.announce && config.node.nodeSkHex !== ''
+      ? new NodeAnnouncer({
+          skHex: config.node.nodeSkHex,
+          role: config.node.role,
+          pool,
+          relays: () => config.relayUrls,
+          software: config.node.software,
+          webUrl: config.node.webUrl,
+          ttlS: config.node.announceTtlS,
+          heartbeatMs: config.node.heartbeatMs,
+          powMin: config.publishPowMin,
+          allowPrivateHosts: config.node.allowPrivateHosts,
+          topics: () => nodeTopics.topics(),
+          topicCount: () => nodeTopics.count(),
+          checkpoint: () => {
+            const rows = fedDb.listUpstreams();
+            if (rows.length === 0) return null;
+            const max = rows.reduce((acc, row) => Math.max(acc, row.checkpoint ?? 0), 0);
+            return max > 0 ? max : null;
+          },
+          logger,
+        })
+      : null;
+
+  // Adresár uzlov (`GET /nodes`). Zdroj sú RELAYE, na ktoré sme už pripojení;
+  // upstreamy sa pýtajú len keď uzol do siete vstúpil (oznamuje sa, alebo
+  // má NODE_UPSTREAMS=auto) — inak by sme v legacy režime otvárali spojenia,
+  // ktoré predtým neexistovali.
+  const nodeDirectory = new NodeDirectory({
+    relays: pool,
+    upstreams: () => config.upstreamGateways.map((upstream) => ({ id: upstream.id, baseUrl: upstream.baseUrl })),
+    fanOut: config.node.announce || config.node.upstreamsMode === 'auto',
+    allowPrivateHosts: config.node.allowPrivateHosts,
+    logger,
+  });
 
   const app = createGatewayApp({
     pool,
@@ -744,7 +834,25 @@ export function buildGateway(
     // Phase 6a: push do fronty len pre AKCEPTOVANÉ eventy a len keď sú
     // nejake upstreamy — inak hook neposkytujeme vôbec (nulová zmena
     // správania single-instance inštancie).
-    ...(fedUpstreams.length > 0 ? { onEventAccepted: (event: NostrEvent) => fedEngine.enqueueLocalEvent(event) } : {}),
+    acceptWrites: config.node.capabilities.write,
+    // F4AI-39: operátor musí vidieť, akú rolu mu env nakonfiguroval (a pri
+    // oznamujúcom uzle aj verejný kľúč, ktorý je priraditeľný v /nodes). Len
+    // KEĎ uzol mesh explicitne zapnul — inak by aj legacy inštancia dostala do
+    // `/health` nové pole, a to by bola zmena odpovede bez novej env.
+    ...(config.node.roleExplicit || config.node.announce || config.node.upstreamsMode !== 'manual'
+      ? {
+          nodeStatus: (): { role: string; announce: boolean; upstreams: string; node_id: string | null; pubkey: string | null } => ({
+            role: config.node.role,
+            announce: config.node.announce,
+            upstreams: config.node.upstreamsMode,
+            node_id: announcer?.nodeId ?? null,
+            pubkey: announcer?.pubkey ?? null,
+          }),
+        }
+      : {}),
+    ...(fedUpstreams.length > 0 && config.node.capabilities.fedPush
+      ? { onEventAccepted: (event: NostrEvent) => fedEngine.enqueueLocalEvent(event) }
+      : {}),
     indexStatus: () =>
       search?.availability() ?? {
         available: false,
@@ -758,8 +866,10 @@ export function buildGateway(
   // aby na ne platili CORS + GET limiter + response cache (hono púšťa
   // middleware v poradí registrácie a tieto route sú súčasťou toho istého
   // `app` — `app.route('/', sub)` ich len prefixne prázdnym reťazcom).
+  // F4AI-39: registrácia operátorov patrí k plnej inštancii (hub). Seed je
+  // read-only a client/writer nemajú vlastných pisúcich.
   const register =
-    overrides?.disableRegisterRoutes === true
+    overrides?.disableRegisterRoutes === true || !config.node.capabilities.register
       ? null
       : createRegisterRoutes({
           db: operators,
@@ -776,6 +886,32 @@ export function buildGateway(
           ...(overrides?.probeDeps !== undefined ? { probeDeps: overrides.probeDeps } : {}),
         });
   if (register !== null) app.route('/', register.app);
+
+  // ── `GET /nodes` (F4AI-37) ───────────────────────────────────────────────
+  // Read-only projekcia announcementov; mountujeme ju vždy (nová cesta,
+  // žiadny existujúci klient sa na ňu nespoliehala). V legacy režime
+  // obsahuje len uzly, ktoré vidíme na vlastných relayoch.
+  // F4AI-38: discovery exists LEN v auto režime. Manual (default) = žiadny
+  // timer, žiadny nový relay, žiadne `pool.add()` — pool má presne tie URL,
+  // ktoré dostal z konfigurácie.
+  const nodeDiscovery =
+    config.node.upstreamsMode === 'auto'
+      ? new NodeDiscovery({
+          pool,
+          directory: nodeDirectory,
+          ownRelays: () => config.relayUrls,
+          selfNodeId: announcer?.nodeId ?? null,
+          selfPubkey: announcer?.pubkey ?? null,
+          allowPrivateHosts: config.node.allowPrivateHosts,
+          logger,
+        })
+      : null;
+
+  registerNodeRoutes(app, {
+    directory: nodeDirectory,
+    logger,
+    discovery: nodeDiscovery !== null ? () => nodeDiscovery.status() : undefined,
+  });
 
   if (overrides?.disableReadRoutes !== true) {
     registerReadRoutes(app, {
@@ -916,6 +1052,13 @@ export function buildGateway(
     reputation,
     ideas,
     papers,
+    node: {
+      config: config.node,
+      announcer,
+      directory: nodeDirectory,
+      discovery: nodeDiscovery,
+      topics: nodeTopics,
+    },
     fed: {
       db: fedDb,
       engine: fedEngine,

@@ -11,6 +11,14 @@
 import type { Resource } from 'i18next';
 
 import { enResources } from '../src/i18n/resources.js';
+import deAdmin from '../src/locales/de/admin.json';
+import deAuth from '../src/locales/de/auth.json';
+import deCommon from '../src/locales/de/common.json';
+import deForum from '../src/locales/de/forum.json';
+import dePaper from '../src/locales/de/paper.json';
+import deRegister from '../src/locales/de/register.json';
+import deSettings from '../src/locales/de/settings.json';
+import deWrite from '../src/locales/de/write.json';
 import skAdmin from '../src/locales/sk/admin.json';
 import skAuth from '../src/locales/sk/auth.json';
 import skCommon from '../src/locales/sk/common.json';
@@ -23,7 +31,11 @@ import skWrite from '../src/locales/sk/write.json';
 /** jazyk, v ktorom testy renderujú (default existujúcich asertov) */
 export const TEST_LANG = 'sk';
 
-/** oba jazyky inline — backend sa v testoch vôbec nevolá */
+/**
+ * All languages inline — the backend is never called in a test. F4AI-43 added
+ * `de` here so the German plural forms and the language menu can be rendered
+ * without a dynamic import.
+ */
 export const TEST_RESOURCES: Resource = {
   ...enResources,
   sk: {
@@ -35,5 +47,15 @@ export const TEST_RESOURCES: Resource = {
     settings: skSettings,
     register: skRegister,
     paper: skPaper,
+  },
+  de: {
+    common: deCommon,
+    forum: deForum,
+    write: deWrite,
+    auth: deAuth,
+    admin: deAdmin,
+    settings: deSettings,
+    register: deRegister,
+    paper: dePaper,
   },
 };

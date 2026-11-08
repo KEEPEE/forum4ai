@@ -56,6 +56,10 @@ export type RelayConnector = (url: string) => Promise<RelayLike>;
 
 export interface RelayStatus {
   url: string;
+  /** F4AI-38: false = len na čítanie (objavený relay) */
+  write?: boolean;
+  /** F4AI-38: pridaný discovery, nie konfiguráciou */
+  discovered?: boolean;
   connected: boolean;
   /** počet neúspešných pokusov o spojenie od posledného úspechu */
   attempts: number;
@@ -102,6 +106,14 @@ export interface RelayPoolOptions {
    * na cudzie relays (všetko len do poolu). Default `true`.
    */
   publishAuthorRelays?: boolean;
+  /**
+   * F4AI-38: ako sa lišiace relaye objavené z `/nodes` zúčastňujú na
+   * ČÍTANÍ. Default `failover` — configured relaye sú zdroj pravdy a cudzie
+   * slúžia len keď žiadny konfigurovaný nie je pripojený. `always` =
+   * fan-out do celej siete, `never` = objavy sú výhradne publish-cieľ.
+   * Bez objavených relayov je rozdiel nulový (žiadna zmena správania).
+   */
+  discoveredReads?: 'never' | 'failover' | 'always';
 }
 
 interface ManagedRelay {
@@ -115,6 +127,16 @@ interface ManagedRelay {
   retryTimer: ReturnType<typeof setTimeout> | null;
   /** true po cielenom close() — potlačí reconnect */
   closing: boolean;
+  /**
+   * F4AI-38: smie sa na tomto relayi zapisovať. `false` majú objavy z
+   * `/nodes` (cudzie relaye, ktoré len čítame) — `publish()` ich vynechá,
+   * pokiaľ ich volajúci explicitovne nemenuje.
+   */
+  write: boolean;
+  /** F4AI-38: pridali sme ho automatickým discovery (nie konfiguráciou) */
+  discovered: boolean;
+  /** ms epoch pridania (discovery má odhadovať stalosť) */
+  addedAt: number;
 }
 
 interface PoolSubscription {
@@ -250,6 +272,7 @@ export class RelayPool {
     now: () => number;
     random: () => number;
     publishAuthorRelays: boolean;
+    discoveredReads: 'never' | 'failover' | 'always';
     logger: (line: string) => void;
   };
 
@@ -290,6 +313,7 @@ export class RelayPool {
       now,
       random,
       publishAuthorRelays: options.publishAuthorRelays ?? true,
+      discoveredReads: options.discoveredReads ?? 'failover',
       logger: options.logger ?? (() => undefined),
     };
 
@@ -305,19 +329,89 @@ export class RelayPool {
    * Pridá relay do poolu (konštruktor). A2: toto je JEDINÁ cesta, ktorá
    * rozšíri `managed` — publish na cudzie URL pridaná nezvyšuje.
    */
-  add(url: string): string | null {
+  add(url: string, opts?: { write?: boolean; discovered?: boolean }): string | null {
     const normalized = normalizeRelayUrl(url);
     if (normalized === null || this.closed) return normalized;
     if (!this.managed.has(normalized)) {
-      const m = this.addEntry(normalized);
+      const m = this.addEntry(normalized, opts);
       void this.ensure(m.url);
     }
     return normalized;
   }
 
+  /**
+   * F4AI-38: vyhodí relay z poolu — uzavrie spojenie, zruší retry timer a
+   * odpojí od neho subs. Discovery musí vedieť aj OBRÁTIŤ (miznúci seed),
+   * inak by pool rástol donekonečna a s ním aj reconnect tlak na mŕtvych
+   * peerov.
+   */
+  remove(url: string): boolean {
+    const normalized = normalizeRelayUrl(url);
+    if (normalized === null) return false;
+    const m = this.managed.get(normalized);
+    if (m === undefined) return false;
+    m.closing = true;
+    if (m.retryTimer !== null) {
+      clearTimeout(m.retryTimer);
+      m.retryTimer = null;
+    }
+    for (const sub of this.subscriptions) {
+      for (const [key, active] of [...sub.active]) {
+        if (!key.startsWith(`${normalized}#`)) continue;
+        sub.active.delete(key);
+        sub.attached.delete(normalized);
+        sub.eosed.delete(normalized);
+        try {
+          active.close('relay removed');
+        } catch {
+          /* už zavreté */
+        }
+      }
+    }
+    try {
+      m.relay?.close();
+    } catch {
+      /* už zavreté */
+    }
+    m.relay = null;
+    this.managed.delete(normalized);
+    return true;
+  }
+
+  /** URL, na ktoré sa píše (default cieľ `publish()`) */
+  writeUrls(): string[] {
+    return [...this.managed.values()].filter((m) => m.write).map((m) => m.url);
+  }
+
+  /** URL, z ktorých čítame (fan-out `query()` a `subscribe()`) */
+  readUrls(): string[] {
+    const all = [...this.managed.values()];
+    const configured = all.filter((m) => !m.discovered);
+    const discovered = all.filter((m) => m.discovered);
+    if (discovered.length === 0 || this.options.discoveredReads === 'never') {
+      return configured.map((m) => m.url);
+    }
+    if (this.options.discoveredReads === 'always') return all.map((m) => m.url);
+    // failover: cudzie relaye sú záložný zdroj, nie druhé stanovisko
+    const configuredReady = configured.some((m) => m.relay?.connected === true);
+    return (configuredReady ? configured : all).map((m) => m.url);
+  }
+
+  /** URL, ktoré sme dostali konfiguráciou (žiadne discovery) */
+  configuredUrls(): string[] {
+    return [...this.managed.values()].filter((m) => !m.discovered).map((m) => m.url);
+  }
+
+  /** URL pridané discovery (pre diagnostiku a stropy discovery) */
+  discoveredUrls(): string[] {
+    return [...this.managed.values()].filter((m) => m.discovered).map((m) => m.url);
+  }
+
   status(): RelayStatus[] {
     return [...this.managed.values()].map((m) => ({
       url: m.url,
+      write: m.write,
+      discovered: m.discovered,
       connected: m.relay?.connected === true,
       attempts: m.attempts,
       nextAttemptAt: m.nextAttemptAt,
@@ -392,8 +486,17 @@ export class RelayPool {
       const normalized = normalizeRelayUrl(url);
       if (normalized !== null && !targets.includes(normalized)) targets.push(normalized);
     };
-    for (const url of relays ?? this.urls) push(url);
-    for (const url of this.urls) push(url);
+    // F4AI-38: default sú relaye, na ktoré SME oprávnení písať. Explicitne
+    // menované URL sa berú tiež — ale NIKDY z cudzích objavených relayov:
+    // `write:false` je prísľub, že cez objavený relay nič nepublishujeme,
+    // aj keď si ho volajúci (napr. NIP-65 outbox autora) vypýta sám.
+    const writable = (url: string): boolean => this.managed.get(url)?.write !== false;
+    for (const url of relays ?? this.writeUrls()) {
+      const normalized = normalizeRelayUrl(url);
+      if (normalized !== null && !writable(normalized)) continue;
+      push(url);
+    }
+    for (const url of this.writeUrls()) push(url);
 
     const results: PublishResult[] = [];
     await Promise.all(
@@ -467,9 +570,19 @@ export class RelayPool {
     const timeoutMs = opts?.timeoutMs ?? this.options.eoseTimeoutMs;
     // C2: istota spojení PARALELNE — serialne `await` pridávalo ku každému
     // cold-startu N× connect timeout (mŕtvy relay spomalil KAŽDÉ čítanie)
+    // F4AI-38 (P1 review): failover sa rozhoduje AŽ po pripojení konfigurovaných
+    // relayov. `readUrls()` sa pýta na `connected`, ktoré je pri cold-starte
+    // ešte false — rozhodnúť pred `ensure()` by poslalo čítanie do cudzích
+    // relayov aj v prípade, že náš relay len práve vstáva.
     const relays: RelayLike[] = [];
-    for (const relay of await Promise.all(this.urls.map((url) => this.ensure(url)))) {
+    const configured = this.configuredUrls();
+    for (const relay of await Promise.all(configured.map((url) => this.ensure(url)))) {
       if (relay) relays.push(relay);
+    }
+    if (relays.length === 0 && this.discoveredReadsAllowed()) {
+      for (const relay of await Promise.all(this.discoveredUrls().map((url) => this.ensure(url)))) {
+        if (relay) relays.push(relay);
+      }
     }
     if (relays.length === 0) return [];
 
@@ -592,7 +705,10 @@ export class RelayPool {
 
   // ── interné ────────────────────────────────────────────────────────────
 
-  private addEntry(normalized: string): ManagedRelay {
+  private addEntry(
+    normalized: string,
+    opts?: { write?: boolean; discovered?: boolean },
+  ): ManagedRelay {
     const m: ManagedRelay = {
       url: normalized,
       relay: null,
@@ -603,6 +719,9 @@ export class RelayPool {
       lastConnectedAt: null,
       retryTimer: null,
       closing: false,
+      write: opts?.write ?? true,
+      discovered: opts?.discovered ?? false,
+      addedAt: this.options.now(),
     };
     this.managed.set(normalized, m);
     return m;
@@ -672,6 +791,10 @@ export class RelayPool {
   private attachSub(sub: PoolSubscription, m: ManagedRelay): void {
     const relay = m.relay;
     if (!relay || !relay.connected || sub.removed) return;
+    // F4AI-38: lišiace relaye pripájame na subs len v režime, ktorý to
+    // pripúšťa (default failover = až keď nie je pripojený žiadny
+    // konfigurovaný). Inak by cudzí obsah tiekol do každého čítania.
+    if (m.discovered && !this.discoveredReadsAllowed()) return;
     // pri reconnecte odpúšťame starú per-relay subs (onclose ju síl zvyčajne
     // zmazal, ale istota — inak by sa dvakrát registrovala a emitovala)
     for (const [key, active] of sub.active) {
@@ -712,6 +835,16 @@ export class RelayPool {
     } catch {
       // relay práve zomrel — obnoví sa po reconnecte
     }
+  }
+
+  /** `true` keď si objavené relaye zaslúžia aj čítacie fan-outy */
+  private discoveredReadsAllowed(): boolean {
+    if (this.options.discoveredReads === 'always') return true;
+    if (this.options.discoveredReads === 'never') return false;
+    for (const m of this.managed.values()) {
+      if (!m.discovered && m.relay?.connected === true) return false;
+    }
+    return true;
   }
 
   private fireEose(sub: PoolSubscription): void {

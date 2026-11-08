@@ -40,7 +40,7 @@
 import { existsSync } from 'node:fs';
 
 import Database from 'better-sqlite3';
-import { buildMatchQuery, ORIGIN_SELF } from '@forum4ai/shared';
+import { buildMatchQuery, eventTitle, ORIGIN_SELF, type NostrTag } from '@forum4ai/shared';
 
 type SqliteDb = Database.Database;
 type Statement = Database.Statement;
@@ -63,6 +63,29 @@ export const SEARCH_DEADLINE_DEFAULT_MS = 300;
 /** stropy `limit` pre GET /search (zadanie: 1..50, default 20) */
 export const SEARCH_LIMIT_DEFAULT = 20;
 export const SEARCH_LIMIT_MAX = 50;
+/**
+ * F4AI-42: how many leading characters of `content` the search SELECT reads to
+ * derive a title. A title is the first line of the event (or its first
+ * markdown heading), so a few hundred characters is always enough — and a
+ * paper body of 40 kB does not have to travel through the read-only connection
+ * for every one of the 50 hits.
+ */
+export const TITLE_CONTENT_HEAD_CHARS = 400;
+
+/**
+ * `tags_json` of an index row, defensively: a row the ingestor wrote always
+ * holds a JSON array, but a hand-edited or half-written index must not turn a
+ * search into a 500 — without tags the title simply falls back to the content.
+ */
+function tagsFromRow(value: unknown): NostrTag[] {
+  if (typeof value !== 'string' || value === '') return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed) ? (parsed as NostrTag[]) : [];
+  } catch {
+    return [];
+  }
+}
 /**
  * Phase 6a: ako často smie `Fts5SearchChannel.origins()` znova čítať
  * `SELECT DISTINCT origin` (ms). Hodnota nie je kritická: nové id inštancie
@@ -101,6 +124,15 @@ export interface RankedHit {
   snippet?: string;
   addr?: string | null;
   /**
+   * F4AI-42: the human-readable title of the event, derived from the row by
+   * `eventTitle` in `@forum4ai/shared` — the same rule the indexer's own
+   * `search()` uses. `null` means the event has no readable title (a status
+   * event whose content is JSON), and the UI falls back to `addr`/`id`.
+   * Optional like `lang`: a channel that does not read content and tags
+   * (the vector stub) simply leaves it out.
+   */
+  title?: string | null;
+  /**
    * F4AI-2b2: jazyk eventu z NIP-32 labelu (`lang` stĺpec indexer DB),
    * `null` = neoznačený. Definícia je VOLITEĽNÁ — kanál bez jazykovej
    * kolónky (stará DB, vektorový stub) ju jednoducho nevyplní.
@@ -126,6 +158,14 @@ export interface RankedHit {
 export interface SearchQueryOptions {
   limit: number;
   kinds?: number[];
+  /**
+   * F4AI-35 (node mesh): druhy, ktoré sa majú z výsledkov VYLÚČIť, keď sa
+   * `kinds=` nešpecifikovalo. Node announcement (30026) je infraštruktúra,
+   * nie diskusia — bez tohto filtra by `GET /search?q=forum4ai` vrátil aj
+   * heartbeaty uzlov. `kinds=` explicitne menovaný filter vyhráva (volajúci
+   * vie, čo chce), takže exclusion sa uplatní len pri výchozom "všetko".
+   */
+  excludeKinds?: number[];
   authors?: string[];
   since?: number;
   until?: number;
@@ -328,6 +368,8 @@ export interface Fts5ChannelOptions {
 
 interface StatementShape {
   kinds: number;
+  /** F4AI-35: `e.kind NOT IN (…)` — mesh announcementy nie sú obsah */
+  excludeKinds: number;
   authors: number;
   since: boolean;
   until: boolean;
@@ -604,6 +646,11 @@ export class Fts5SearchChannel implements SearchChannel {
     const deadlineAt = opts.deadlineAt ?? started + this.deadlineMs;
 
     const kinds = opts.kinds !== undefined && opts.kinds.length > 0 ? opts.kinds : undefined;
+    // exclusion platí LEN keď volajúci nechal výber druhov na nás
+    const excludeKinds =
+      kinds === undefined && opts.excludeKinds !== undefined && opts.excludeKinds.length > 0
+        ? opts.excludeKinds
+        : undefined;
     const authors = opts.authors !== undefined && opts.authors.length > 0 ? opts.authors : undefined;
     // F4AI-2b2: `lang` filter — na pred-2b2 indexu sa TICHO ignoruje (dopyt
     // bez kolónky by inok padol na `no such column`; 503 by bol klamstvo)
@@ -618,6 +665,7 @@ export class Fts5SearchChannel implements SearchChannel {
     }
     const shape: StatementShape = {
       kinds: kinds?.length ?? 0,
+      excludeKinds: excludeKinds?.length ?? 0,
       authors: authors?.length ?? 0,
       since: opts.since !== undefined,
       until: opts.until !== undefined,
@@ -628,6 +676,7 @@ export class Fts5SearchChannel implements SearchChannel {
 
     const bind: Array<string | number> = [normalizedQuery, deadlineAt];
     if (kinds !== undefined) bind.push(...kinds);
+    if (excludeKinds !== undefined) bind.push(...excludeKinds);
     if (authors !== undefined) bind.push(...authors);
     if (opts.since !== undefined) bind.push(opts.since);
     if (opts.until !== undefined) bind.push(opts.until);
@@ -658,37 +707,54 @@ export class Fts5SearchChannel implements SearchChannel {
       throw new IndexUnavailableError(this.path, `query error: ${message}`);
     }
 
-    const hits = rows.map((row) => ({
-      id: String(row['id']),
-      kind: Number(row['kind']),
-      pubkey: String(row['pubkey']),
-      created_at: Number(row['created_at']),
-      score: Number(row['score']),
-      snippet: typeof row['snippet'] === 'string' ? row['snippet'] : undefined,
-      addr: typeof row['addr'] === 'string' ? row['addr'] : null,
-      // F4AI-2b2: `lang` len ak ho index pozná — inak pole VÔBEC nevyplníme
-      // (prítomnosť = signát podpory, null = označený nebola)
-      ...(this.langColumn ? { lang: typeof row['lang'] === 'string' ? row['lang'] : null } : {}),
-      // Phase 6a: rovnaké pravidlo pre `origin`/`trusted` — pri pred-6a
-      // indexe polia nevyplníme vôbec (pridanie poľa je aditívne, ale
-      // `origin: 'self'` by tvrdilo, že sme to zistili)
-      ...(this.originColumn
-        ? {
-            origin: typeof row['origin'] === 'string' ? row['origin'] : ORIGIN_SELF,
-            trusted: typeof row['trusted'] === 'number' ? row['trusted'] === 1 : true,
-          }
-        : {}),
-    }));
+    const hits = rows.map((row) => {
+      const kind = Number(row['kind']);
+      // F4AI-42: the title is derived from the row (the index has no title
+      // column), so it can never drift from the event it came from. Only the
+      // head of `content` is selected — see TITLE_CONTENT_HEAD_CHARS.
+      const title = eventTitle({
+        kind,
+        content: typeof row['content_head'] === 'string' ? row['content_head'] : '',
+        tags: tagsFromRow(row['tags_json']),
+      });
+      return {
+        id: String(row['id']),
+        kind,
+        pubkey: String(row['pubkey']),
+        created_at: Number(row['created_at']),
+        score: Number(row['score']),
+        snippet: typeof row['snippet'] === 'string' ? row['snippet'] : undefined,
+        addr: typeof row['addr'] === 'string' ? row['addr'] : null,
+        // F4AI-42: `null` is a real answer ("this event has no title"), the
+        // field is always present — unlike `lang`/`origin`, whose absence
+        // means "this index does not track it"
+        title,
+        // F4AI-2b2: `lang` len ak ho index pozná — inak pole VÔBEC nevyplníme
+        // (prítomnosť = signát podpory, null = označený nebola)
+        ...(this.langColumn ? { lang: typeof row['lang'] === 'string' ? row['lang'] : null } : {}),
+        // Phase 6a: rovnaké pravidlo pre `origin`/`trusted` — pri pred-6a
+        // indexe polia nevyplníme vôbec (pridanie poľa je aditívne, ale
+        // `origin: 'self'` by tvrdilo, že sme to zistili)
+        ...(this.originColumn
+          ? {
+              origin: typeof row['origin'] === 'string' ? row['origin'] : ORIGIN_SELF,
+              trusted: typeof row['trusted'] === 'number' ? row['trusted'] === 1 : true,
+            }
+          : {}),
+      };
+    });
     return { hits, interrupted: false, tookMs: this.now() - started, normalizedQuery };
   }
 
   /** SQL per tvar filtra (cache prepared statements — ako v indexeri) */
   private statementFor(db: SqliteDb, shape: StatementShape): Statement {
-    const key = `${String(shape.kinds)}|${String(shape.authors)}|${String(shape.since)}|${String(shape.until)}|${String(shape.lang)}|${String(shape.origin)}`;
+    const key = `${String(shape.kinds)}|${String(shape.excludeKinds)}|${String(shape.authors)}|${String(shape.since)}|${String(shape.until)}|${String(shape.lang)}|${String(shape.origin)}`;
     const cached = this.statementCache.get(key);
     if (cached !== undefined) return cached;
     const where: string[] = ['events_fts MATCH ?', `${DEADLINE_FN}(?) = 1`];
     if (shape.kinds > 0) where.push(`e.kind IN (${Array(shape.kinds).fill('?').join(', ')})`);
+    if (shape.excludeKinds > 0)
+      where.push(`e.kind NOT IN (${Array(shape.excludeKinds).fill('?').join(', ')})`);
     if (shape.authors > 0) where.push(`e.pubkey IN (${Array(shape.authors).fill('?').join(', ')})`);
     if (shape.since) where.push('e.created_at >= ?');
     if (shape.until) where.push('e.created_at <= ?');
@@ -696,6 +762,8 @@ export class Fts5SearchChannel implements SearchChannel {
     if (shape.origin) where.push('e.origin = ?');
     const sql = `
       SELECT e.id, e.pubkey, e.kind, e.created_at, e.addr,
+             substr(e.content, 1, ${TITLE_CONTENT_HEAD_CHARS}) AS content_head,
+             e.tags_json,
              ${this.langColumn ? 'e.lang,' : ''}
              ${this.originColumn ? 'e.origin, e.trusted,' : ''}
              events_fts.rank AS score,

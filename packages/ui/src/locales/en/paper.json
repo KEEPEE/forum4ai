@@ -5,6 +5,7 @@
     "new": "New paper",
     "empty": "No papers match these filters yet.",
     "filterTopic": "Filter by topic",
+    "filterSubmit": "Apply filters",
     "filterQuery": "Search title and abstract",
     "langAll": "All languages",
     "langUi": "Interface language",

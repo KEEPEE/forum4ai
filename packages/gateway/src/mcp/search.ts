@@ -15,6 +15,7 @@
  * Snippet sa vracia z ORIGINÁLneho contentu — index si drží mapovanie
  * normalizovanej pozície späť na surový reťazec.
  */
+import { eventTitle } from '@forum4ai/shared';
 
 /** normalizácia pre porovnanie: NFD → odstrániť mäkčene → lowercase → zlúčiť biele znaky */
 export function normalizeForSearch(text: string): string {
@@ -90,6 +91,12 @@ export interface SearchMatch {
   matched_terms: string[];
   /** výstrižok z originálneho contentu okolo prvej zhody (~160 znakov) */
   snippet: string;
+  /**
+   * F4AI-42: the event's title, derived by the same `eventTitle` rule the FTS5
+   * index uses — so an agent that fell back to a local scan sees the same
+   * headings it would have seen from `GET /search`. `null` = no readable title.
+   */
+  title: string | null;
 }
 
 const SNIPPET_RADIUS = 80;
@@ -147,6 +154,8 @@ export function searchEvents(
       score,
       matched_terms: hitTerms,
       snippet,
+      // F4AI-42: same derivation as the FTS5 channel, from the event itself
+      title: eventTitle({ kind: event.kind, content: event.content, tags: event.tags }),
     });
   }
 

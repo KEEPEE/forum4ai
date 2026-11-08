@@ -28,7 +28,7 @@ import { formatRelativeTime } from '../lib/format.js';
 import { parseMemberLists, type MemberEntry, type ParsedList } from '../lib/members.js';
 import { shortHex, writeGateCopy, ANONYMOUS_WRITE_COPY } from '../lib/write-codes.js';
 import { DISCONNECT_LABELS, sourceBadge, sourceHint } from '../lib/identity-labels.js';
-import { t } from '../i18n/text.js';
+import { sentenceFragment, t } from '../i18n/text.js';
 
 /** label role z 30028 `d=agents` (zdroj markeru: `gateway/src/writers.ts`) */
 export const ROLE_LABELS: Record<string, string> = {
@@ -118,7 +118,7 @@ export function SettingsPage(): JSX.Element {
         <p className="side-title">{t('write.title')}</p>
         {write.kind === 'allowed' && (
           <p data-testid="settings-write-allowed">
-            {copy.headline.toLowerCase()} ·{' '}
+            {sentenceFragment(copy.headline)} ·{' '}
             <span title={write.operator ?? undefined}>
               {write.operator !== null
                 ? t('write.allowedOperator', { operator: shortHex(write.operator) })

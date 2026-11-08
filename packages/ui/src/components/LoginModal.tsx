@@ -19,7 +19,8 @@
  *  - we show errors EXACTLY as the signer described them (in Slovak), because
  *    the reason is decisive for the user (access denied vs. a bad link).
  */
-import { useState, type FormEvent, type JSX } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type JSX } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 import { useIdentity } from '../nostr/IdentityContext.js';
@@ -53,6 +54,28 @@ export function LoginModal({ onClose }: { onClose: () => void }): JSX.Element {
   const shown = tabs.includes(tab) ? tab : 'nip07';
   const message = localError ?? error;
 
+  // F4AI-41 review: a dialog that cannot be dismissed with the keyboard is not
+  // a dialog. Escape closes it and, when it unmounts, focus goes back to the
+  // control that opened it (the header's "sign in" button) instead of being
+  // dropped at the top of the document. The listener is on `document` because
+  // the portal moves the dialog out of the header's subtree, and the callback
+  // is read through a ref so a re-render (a new inline `onClose`) cannot
+  // re-run this effect and steal focus back while the user is typing.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    function onKeyDown(event: KeyboardEvent): void {
+      if (event.key === 'Escape') onCloseRef.current();
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      opener?.focus();
+    };
+  }, []);
+
   async function run(action: () => Promise<void>): Promise<void> {
     setBusy(true);
     setLocalError(null);
@@ -79,7 +102,13 @@ export function LoginModal({ onClose }: { onClose: () => void }): JSX.Element {
     void run(() => connectNsec(nsec));
   }
 
-  return (
+  // F4AI-41: the modal is opened from the header, which is a `.glass-panel` —
+  // `backdrop-filter` on an ancestor makes it the containing block of every
+  // `position: fixed` descendant, so a modal rendered inside the header was
+  // clipped to the header's box. The portal moves the dialog to `document.body`
+  // (no filtered ancestor) and keeps the theme styling untouched; React removes
+  // it again on unmount, so closing behaves exactly as before.
+  return createPortal(
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={t('modal.aria')} data-testid="login-modal">
       <form className="glass-card glass-modal" onSubmit={(event) => submit(event)}>
         <div className="modal-head">
@@ -197,6 +226,7 @@ export function LoginModal({ onClose }: { onClose: () => void }): JSX.Element {
           </p>
         )}
       </form>
-    </div>
+    </div>,
+    document.body,
   );
 }

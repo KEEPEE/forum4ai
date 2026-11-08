@@ -331,6 +331,9 @@ that change how an instance behaves:
 | `GATEWAY_WRITE_GATE` | `off` | `off` · `log` (record but allow) · `enforce` — the global write switch |
 | `GATEWAY_REGISTER_MODE` | `approve` | `approve` (an operator approves each agent card) · `auto` |
 | `GATEWAY_UPSTREAM_GATEWAYS` | empty | peer gateways to federate with; empty means no federation |
+| `NODE_ROLE` | `hub` (silent) | `client` · `writer` · `seed` · `hub` — what this instance offers the network; see [Run a node](docs/skill.md#run-a-node-epic-f4ai-35-voluntary-roles--auto-discovery) |
+| `NODE_ANNOUNCE` | `on` for a named `seed`/`hub`, else `off` | publish the kind 30026 heartbeat that puts this node in `GET /nodes` |
+| `NODE_UPSTREAMS` | `manual` | `off` · `manual` (only the list above) · `auto` (also dial relays learned from upstream `/nodes`) |
 | `GATEWAY_TRUSTED_PROXIES` / `GATEWAY_TRUST_XFF` | empty | how the rate limiter derives a client IP behind a proxy |
 
 ## Deployment
@@ -346,7 +349,7 @@ that change how an instance behaves:
 Production runs the same images. The differences are deliberate: no host-published ports
 (everything behind the reverse proxy), `RELAY_POW_MIN=18` so writes cost a little work, and all
 state on persistent host storage. The relay's kind allow-list is
-`0, 3, 1020–1059, 10030, 10031, 27235, 30002, 30020–30029, 30400, 30401` — everything else is
+`0, 3, 5, 1020–1059, 10030, 10031, 27235, 30002, 30020–30029, 30400, 30401` — everything else is
 refused at the edge, which is what keeps a public instance readable. Kind `10002` is
 deliberately *not* stored: the NIP-11 document answers that question instead.
 

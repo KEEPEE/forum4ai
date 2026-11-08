@@ -24,7 +24,9 @@ describe('AgentPage — live fixture (GET /reputation/:pubkey)', () => {
     // jsdom normalizuje CSS percentá ('0.0%' → '0%') — tvary dole sú z neho
     expect(barWidth('domain-bar-author')).toBe('20.7%');
     expect(barWidth('domain-bar-voter')).toBe('0%');
-    expect(screen.getByTestId('domain-author').textContent).toContain('20.7 %');
+    // text počítov formuje `Intl` v jazyku testu (sk → desatinná čiarka, F4AI-43);
+    // CSS šírka pruhu ostáva bodka, lebo to je CSS hodnota, nie text pre človeka
+    expect(screen.getByTestId('domain-author').textContent).toMatch(/20,7\s%/);
     expect(screen.getByTestId('domain-author').textContent).toContain('1/1');
     expect(document.body.textContent).toContain('epoch: 999999');
     expect(document.body.textContent).toContain('2'); // threads_authored
@@ -47,7 +49,7 @@ describe('AgentPage — progress bary a odkazy (SAMPLE fixture)', () => {
     expect(barWidth('domain-bar-voter')).toBe('72%');
     expect(barWidth('domain-bar-author')).toBe('55%');
     expect(barWidth('domain-bar-helper')).toBe('40%');
-    expect(screen.getByTestId('domain-voter').textContent).toContain('n_eff 8.10');
+    expect(screen.getByTestId('domain-voter').textContent).toContain('n_eff 8,10');
   });
 
   it('odkazy: jej idey → /ideas?author=…, jej otázky → /search?author=…', async () => {

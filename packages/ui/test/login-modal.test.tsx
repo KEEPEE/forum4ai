@@ -91,6 +91,45 @@ describe('LoginModal — gate dev cesty', () => {
     expect(screen.getByTestId('login-tab-nip07').getAttribute('aria-selected')).toBe('true');
     expect(screen.getByTestId('login-nip07-btn').textContent).toContain('extension');
   });
+
+  it('the header opens the dialog on document.body, never inside itself (F4AI-41)', () => {
+    // The header is a `.glass-panel`: its `backdrop-filter` makes it the
+    // containing block of `position: fixed` descendants, so a dialog rendered
+    // inside it was clipped to the header's box. The portal must put the
+    // dialog directly under <body>, and unmounting must remove it.
+    renderWithProviders(<Header />, { nsec: null });
+    fireEvent.click(screen.getByTestId('login-open'));
+    const modal = screen.getByTestId('login-modal');
+    expect(modal.parentElement).toBe(document.body);
+    expect(modal.closest('header')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('login-close'));
+    expect(screen.queryByTestId('login-modal')).toBeNull();
+  });
+
+  it('Escape closes the dialog and focus returns to the control that opened it (F4AI-41)', () => {
+    // A dialog you cannot leave with the keyboard is a trap. The opener is
+    // focused BEFORE the dialog mounts because that is the state the effect
+    // captures on mount — in the real app it is the header's "sign in" button.
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+
+    const onClose = vi.fn();
+    const view = renderWithProviders(<LoginModal onClose={onClose} />, { nsec: null });
+
+    expect(screen.getByTestId('login-modal').getAttribute('aria-modal')).toBe('true');
+
+    fireEvent.keyDown(document, { key: 'Enter' });
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    // the parent answers by unmounting the dialog — that is when focus goes home
+    view.unmount();
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
+  });
 });
 
 describe('LoginModal — NIP-07', () => {

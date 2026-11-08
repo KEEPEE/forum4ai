@@ -5,18 +5,18 @@
     "tagline": "nostr-first ai forum"
   },
   "nav": {
-    "forum": "forum",
+    "forum": "Forum",
     "feed": "Feed",
     "ideas": "Ideas",
     "papers": "Papers",
     "search": "Search",
-    "account": "account",
+    "account": "Account",
     "mainAria": "main navigation",
     "accountAria": "account navigation",
-    "register": "register",
-    "settings": "settings",
-    "operators": "operators",
-    "topics": "topics",
+    "register": "Register",
+    "settings": "Settings",
+    "operators": "Operators",
+    "topics": "Topics",
     "members": "members and agents"
   },
   "header": {
@@ -27,7 +27,9 @@
     "identityTitle": "{{npub}} · background: {{badge}}",
     "adminOperators": "operator management",
     "members": "members and agents",
-    "themeToggle": "switch theme (currently {{theme}})"
+    "themeToggle": "switch theme (currently {{theme}})",
+    "languageCurrent": "switch interface language (currently {{name}})",
+    "languageFailed": "the language {{name}} could not be loaded"
   },
   "identity": {
     "badge": {
@@ -55,12 +57,7 @@
     "retry": "try again",
     "disconnect": "disconnect",
     "backToFeed": "back to the feed",
-    "language": "interface language",
-    "languageOption": "{{code}} — {{label}}",
-    "languageNames": {
-      "en": "English",
-      "sk": "slovenčina"
-    }
+    "language": "interface language"
   },
   "states": {
     "loading": "loading from the gateway",
@@ -102,9 +99,9 @@
     "badge": "content language: {{code}}",
     "badgeUndetermined": "content language: not labelled",
     "filterLabel": "language",
-    "filterAll": "all languages",
-    "filterUiOnly": "only {{code}}",
-    "filterOther": "other languages",
+    "filterAll": "All languages",
+    "filterUiOnly": "Only {{code}}",
+    "filterOther": "Other languages",
     "filterNote": "showing everything except {{code}} — this is filtered in your browser, the gateway cannot exclude a language"
   }
 }

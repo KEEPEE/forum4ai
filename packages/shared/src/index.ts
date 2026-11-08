@@ -68,13 +68,19 @@ export {
   MAX_POW_NONCE,
   countLeadingZeroBits,
   minePowNonce,
+  minePowNonceAsync,
   signWithPow,
+  signWithPowAsync,
   type PowInput,
 } from './pow.js';
 
 // FTS5 match-query builder zdieľaný indexerom (zapisuje aj dopytuje) a
 // gatewayom (read-only GET /search nad indexer DB) — detail v `search.ts`
 export { buildMatchQuery } from './search.js';
+
+// F4AI-42: one rule for "what is the title of this event", shared by the
+// indexer's search(), the gateway's GET /search and therefore the UI.
+export { eventTitle, TITLE_MAX_CHARS, TITLE_TAG_NAMES, type EventTitleSource } from './titles.js';
 
 // Phase 3b (dizajn Q3): Chart DSL v1 — čistý validátor bez I/O, ktorý zdieľa
 // UI (render ```chart zárezu), gateway lint a MCP lint (Phase 4). UI vie
@@ -211,3 +217,55 @@ export type {
   WriterEntry,
   WriterRole,
 } from './writers.js';
+
+// ── node mesh (F4AI-36…38, epic F4AI-35) ──────────────────────────────────
+// Role matrix, kind 30026 announcement schema and the sanitizers that make a
+// stranger's announcement safe to dial. Pure module: the gateway signs, the
+// aggregator publishes.
+export {
+  NODE_ADDRESS_PREFIX,
+  NODE_ANNOUNCE_HEARTBEAT_JITTER_MS,
+  NODE_ANNOUNCE_HEARTBEAT_MS,
+  NODE_ANNOUNCE_MAX_AGE_S,
+  NODE_ANNOUNCE_MAX_CLOCK_SKEW_S,
+  NODE_ANNOUNCE_MAX_RELAYS,
+  NODE_ANNOUNCE_MAX_SOFTWARE_CHARS,
+  NODE_ANNOUNCE_MAX_TOPICS,
+  NODE_ANNOUNCE_MAX_URL_CHARS,
+  NODE_ANNOUNCE_STALE_AFTER_S,
+  NODE_ANNOUNCE_TTL_MAX_S,
+  NODE_ANNOUNCE_TTL_MIN_S,
+  NODE_ANNOUNCE_TTL_S,
+  NODE_ID_PREFIX,
+  NODE_ROLE_NAMESPACE,
+  NODE_ROLE_OFFLINE,
+  NODE_ROLES,
+  buildNodeAnnounceUnsigned,
+  buildNodeOfflineUnsigned,
+  clampNodeTtl,
+  deletionRemovesNode,
+  isNodeRole,
+  isPublicHost,
+  nodeAddress,
+  nodeAnnounceContent,
+  nodeAnnounceTags,
+  nodeFreshness,
+  nodeIdFromPubkey,
+  nodeIdMatchesPubkey,
+  nodeIsDropped,
+  parseNodeAnnounce,
+  parseNodeDeletion,
+  sanitizeRelayUrl,
+  sanitizeRelayUrls,
+  sanitizeTopicSlugs,
+  sanitizeWebUrl,
+} from './nodes.js';
+export type {
+  NodeAnnounceInput,
+  NodeDeletion,
+  NodeFreshness,
+  NodeParseResult,
+  NodeRecord,
+  NodeRole,
+  NodeSanitizeOptions,
+} from './nodes.js';

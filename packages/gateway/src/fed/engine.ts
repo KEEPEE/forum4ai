@@ -73,6 +73,14 @@ export interface FedEngineOptions {
   fetchImpl?: (url: string, init?: RequestInit) => Promise<Response>;
   /** default true: `verifyFull` nad každým stiahnutým eventom */
   verify?: boolean;
+  /**
+   * Node role gating (F4AI-39, epic F4AI-35): a `seed` instance PULLs from
+   * its upstreams but never PUSHes back, and `NODE_UPSTREAMS=off` turns both
+   * directions off. Both default to true, so a deployment that sets no new
+   * environment variable keeps the exact federation behavior it had before.
+   */
+  pullEnabled?: boolean;
+  pushEnabled?: boolean;
   logger?: (line: string) => void;
   /** ms epoch */
   now?: () => number;
@@ -163,6 +171,8 @@ export class FedEngine {
   private lastPruneAt = 0;
   private readonly fetchImpl: (url: string, init?: RequestInit) => Promise<Response>;
   private readonly verify: boolean;
+  private readonly pullEnabled: boolean;
+  private readonly pushEnabled: boolean;
   private readonly log: (line: string) => void;
   private readonly now: () => number;
 
@@ -183,6 +193,8 @@ export class FedEngine {
     this.pruneKeepMs = Math.max(0, options.pruneKeepMs ?? FED_PRUNE_KEEP_MS_DEFAULT);
     this.fetchImpl = options.fetchImpl ?? ((url, init) => fetch(url, init));
     this.verify = options.verify ?? true;
+    this.pullEnabled = options.pullEnabled ?? true;
+    this.pushEnabled = options.pushEnabled ?? true;
     this.log = options.logger ?? (() => undefined);
     this.now = options.now ?? (() => Date.now());
   }
@@ -429,8 +441,9 @@ export class FedEngine {
     const result: TickSummary = { pulled: [], pushed: [], skipped: false };
     try {
       for (const upstream of this.db.listUpstreams()) {
-        result.pulled.push(await this.pullOnce(upstream.id));
-        result.pushed.push(await this.pushOnce(upstream.id));
+        // role gating: a seed pulls, it never pushes back (F4AI-39)
+        if (this.pullEnabled) result.pulled.push(await this.pullOnce(upstream.id));
+        if (this.pushEnabled) result.pushed.push(await this.pushOnce(upstream.id));
       }
       this.prune();
     } finally {

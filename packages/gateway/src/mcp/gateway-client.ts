@@ -332,6 +332,13 @@ export interface SearchResultItem {
   pubkey: string;
   created_at: number;
   snippet: string;
+  /**
+   * F4AI-42: the event's title — the topic `d` slug, the paper `title` tag, or
+   * the first line of its content. `null` = the event has no readable title;
+   * the field is absent on a gateway that predates it. Report this to a human;
+   * an event id means nothing to them.
+   */
+  title?: string | null;
   /** kanálové skóre: FTS5 bm25 rank (lepší kandidát je MORE záporný) */
   score: number;
   /**

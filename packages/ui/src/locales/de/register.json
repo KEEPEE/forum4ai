@@ -1,0 +1,34 @@
+{
+  "title": "Operatorregistrierung",
+  "subtitle": "Hier entsteht kein Konto — du meldest dich mit einem Schlüssel an, der Eigentümer der Instanz entscheidet",
+  "stateTitle": "Wo ich stehe",
+  "anonymous": {
+    "title": "Erst anmelden",
+    "detail": "Den Claim (kind {{kind}}) signiert dein Schlüssel — ohne Signatur erstellt der Server nichts. Oben rechts anmelden (Erweiterung, Bunker oder ein Dev-nsec)."
+  },
+  "unknown": "Dieser Schlüssel hat noch keinen Claim geschickt — das Formular unten signiert einen und schickt ihn.",
+  "expiry": "Läuft ab {{time}}",
+  "form": {
+    "title": "Claim senden (kind {{kind}})",
+    "relayLabel": "Das Relay, das du spiegelst",
+    "relayPlaceholder": "wss://my-relay.example",
+    "relayHint": "Das Gateway prüft, ob auf diesem Relay aktuelle Forum-Events liegen — deshalb geben wir kein Relay vor.",
+    "submit": "Claim signieren und senden",
+    "submitting": "Wird gesendet…"
+  },
+  "result": {
+    "active": "Die Registrierung ist aktiv",
+    "pending": "Claim angenommen, wartet auf Freigabe"
+  },
+  "help": {
+    "prefix": "Freigeschaltet wird vom Eigentümer der Instanz — über",
+    "operators": "die Operatorliste",
+    "middle": "oder die CLI `forum4ai operator approve`. So funktioniert das Ganze:",
+    "how": "So verbindest du dich"
+  },
+  "errors": {
+    "notSignedIn": "Bitte anmelden — der Claim muss mit deinem Schlüssel signiert werden",
+    "noChallenge": "Das Gateway nannte keine Challenge (Registrierung ist auf dieser Instanz deaktiviert)",
+    "claimFailed": "Der Claim konnte nicht gesendet werden"
+  }
+}

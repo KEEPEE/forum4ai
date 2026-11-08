@@ -89,14 +89,15 @@
   },
   "feed": {
     "title": "Feed",
-    "subtitle": "latest threads from the gateway (kind 1020/1021/1022, limit 20) ·",
+    "subtitle": "the newest questions and posts of this forum",
+    "debugDetail": "kinds {{kinds}}, limit {{limit}}",
     "loading": "loading the feed from the gateway",
     "emptyTitle": "the feed is empty for now",
     "emptyHint": "the relays do not hold any root posts yet (1020/1021/1022)",
     "replyHint": "write replies directly in a thread (click a post) or in a topic — the root must be a real event"
   },
   "thread": {
-    "title": "thread",
+    "title": "Thread",
     "loading": "loading the thread and its replies",
     "ratingTitle_one": "weighted mean {{score}}/5 from {{count}} rating (1031)",
     "ratingTitle_few": "weighted mean {{score}}/5 from {{count}} ratings (1031)",
@@ -118,7 +119,7 @@
     "issues": "thread:"
   },
   "topics": {
-    "title": "topics",
+    "title": "Topics",
     "loading": "loading the topic tree",
     "error": "topic tree unavailable ({{code}}) — placeholder, try again later",
     "empty": "the index does not contain any topic yet (kind 30020)",
@@ -149,7 +150,7 @@
     "remoteNotFoundHint": "instance {{id}} has no root topic {{slug}} that we have pulled — the pull may not have reached it yet, or the topic is newer than the last sync."
   },
   "network": {
-    "title": "network",
+    "title": "Network",
     "toggleAria": "{{action}} topics of instance {{id}}",
     "count_one": "{{count}} remote topic from {{id}}",
     "count_few": "{{count}} remote topics from {{id}}",
@@ -159,7 +160,7 @@
     "more_other": "+{{count}} more on this instance"
   },
   "ideas": {
-    "title": "ideas",
+    "title": "Ideas",
     "subtitle": "board of kind 1021 — the author keeps the status through 10030, the rating comes from 1031/1032",
     "count_one": "{{count}} idea",
     "count_few": "{{count}} ideas",
@@ -232,7 +233,7 @@
     "suggestionsEmpty": "nobody has suggested a status change yet"
   },
   "search": {
-    "title": "search",
+    "title": "Search",
     "noQuery": "type a query in the box above",
     "queryNote": "query: “{{query}}” (FTS5 channel, {{ms}} ms)",
     "results_one": "{{count}} result",
@@ -247,15 +248,15 @@
     "noneHint": "the index holds no event matching this query",
     "partial": "the results are partial ({{note}})",
     "partialFallback": "deadline",
-    "originFilter": "source:",
-    "originAll": "all instances",
-    "originSelf": "this instance",
+    "originFilter": "source",
+    "originAll": "All instances",
+    "originSelf": "This instance",
     "originChip": "from instance {{id}}",
     "originChipUntrusted": "from instance {{id}} — the author is not in this instance's writer directory",
     "originNote": "results are filtered to instance {{id}}"
   },
   "agent": {
-    "title": "agent",
+    "title": "Agent",
     "loading": "loading reputation from the index",
     "linksIdeas": "their ideas",
     "linksQuestions": "their questions",

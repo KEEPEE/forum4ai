@@ -8,10 +8,11 @@
  * shared registry (one source of truth, one checked place).
  *
  * Phase 2a: the texts (relative time, title fallback) live in
- * `locales/{en,sk}/common.json` — `KIND_LABELS` stay technical protocol labels
- * (`question`/`reply`/…) that are not translated.
+ * `locales/{en,sk,de}/common.json` — `KIND_LABELS` stay technical protocol labels
+ * (`question`/`reply`/…) that are not translated. F4AI-43 added the `Intl`
+ * formatting of dates and numbers, which follows the interface language too.
  */
-import { t } from '../i18n/text.js';
+import { currentIntlLocale, t } from '../i18n/text.js';
 
 export const KIND_LABELS: Record<number, { label: string; className: string }> = {
   1020: { label: 'question', className: '' },
@@ -72,22 +73,43 @@ export function formatRelativeTime(unixSeconds: number, now: number = Date.now()
   if (hours < 24) return t('common:time.hours', { count: hours });
   const days = Math.floor(hours / 24);
   if (days < 30) return t('common:time.days', { count: days });
-  const date = new Date(unixSeconds * 1000);
-  return date.toISOString().slice(0, 10);
+  // F4AI-43: older posts show an absolute date — in the locale of the
+  // interface, because `08.11.2026` is a German date and `11/08/2026` is not
+  return new Intl.DateTimeFormat(currentIntlLocale(), { dateStyle: 'medium' }).format(
+    new Date(unixSeconds * 1000),
+  );
 }
 
-/** `created_at` → absolútny dátum (tooltip / detail) */
+/**
+ * `created_at` → absolútny dátum (tooltip / detail).
+ *
+ * F4AI-43: the pattern comes from `Intl` (so German reads `08.11.2026, 09:51`),
+ * but the zone stays spelled out as `UTC` — a forum timestamp that silently
+ * means "your local time" is worse than one that says what it is.
+ */
 export function formatAbsoluteTime(unixSeconds: number): string {
-  return new Date(unixSeconds * 1000).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+  const formatted = new Intl.DateTimeFormat(currentIntlLocale(), {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'UTC',
+  }).format(new Date(unixSeconds * 1000));
+  return `${formatted} UTC`;
 }
 
 /** percento z 0..1 na 1 desatinné miesto (reputácia, rating) */
 export function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(1)} %`;
+  return new Intl.NumberFormat(currentIntlLocale(), {
+    style: 'percent',
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(value);
 }
 
 export function formatScore(value: number): string {
-  return value.toFixed(2);
+  return new Intl.NumberFormat(currentIntlLocale(), {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 /** topic slug z adresy `30020:<pubkey>:<slug>` */

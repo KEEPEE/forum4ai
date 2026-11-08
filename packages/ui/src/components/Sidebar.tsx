@@ -25,16 +25,23 @@ import { useApi } from '../api/ApiContext.js';
 import { useResource } from '../hooks/useResource.js';
 import { useOwner } from '../hooks/useOwner.js';
 import { StateLoading } from './StateView.js';
+import { Icon, type IconName } from './icons.js';
 import { originShortLabel } from '../lib/federation.js';
 import type { FedUpstreamTopics, TopicNode } from '../api/types.js';
 
 /** label je kľúč v `common:nav.*` — text nie je v kóde (Phase 2a) */
-const NAV_ITEMS = [
-  { to: '/', labelKey: 'nav.feed', icon: '≡', end: true },
-  { to: '/ideas', labelKey: 'nav.ideas', icon: '✦', end: false },
-  { to: '/papers', labelKey: 'nav.papers', icon: '⌗', end: false },
-  { to: '/search', labelKey: 'nav.search', icon: '⌕', end: false },
-] as const;
+// F4AI-41: the icon used to be a typographic glyph. The Papers one (U+2317 ⌗)
+// is not in the bundled Outfit subset and the browser drew a tofu box; the
+// replacements (▤, and its siblings ≡ ✦ ⌕ ✎ ⚙ ★) only rendered because some
+// system fallback font supplied them, which is why ⌕ came out smaller than the
+// rest. The icons are inline SVG paths now — no font involved, same shape and
+// weight everywhere (`components/icons.tsx`).
+const NAV_ITEMS: { to: string; labelKey: string; icon: IconName; end: boolean }[] = [
+  { to: '/', labelKey: 'nav.feed', icon: 'feed', end: true },
+  { to: '/ideas', labelKey: 'nav.ideas', icon: 'ideas', end: false },
+  { to: '/papers', labelKey: 'nav.papers', icon: 'papers', end: false },
+  { to: '/search', labelKey: 'nav.search', icon: 'search', end: false },
+];
 
 function TopicBranch({ node, depth = 0 }: { node: TopicNode; depth?: number }): JSX.Element {
   const { t } = useTranslation('forum');
@@ -58,7 +65,7 @@ function TopicBranch({ node, depth = 0 }: { node: TopicNode; depth?: number }): 
               setExpanded((value) => !value);
             }}
           >
-            {expanded ? '▾' : '▸'}
+            {expanded ? <Icon name="chevron-down" /> : <Icon name="chevron-right" />}
           </button>
         ) : (
           <span className="topic-toggle-spacer" aria-hidden="true" />
@@ -132,7 +139,7 @@ function NetworkGroup({ upstream }: { upstream: FedUpstreamTopics }): JSX.Elemen
               setExpanded((value) => !value);
             }}
           >
-            {expanded ? '▾' : '▸'}
+            {expanded ? <Icon name="chevron-down" /> : <Icon name="chevron-right" />}
           </button>
         ) : (
           <span className="topic-toggle-spacer" aria-hidden="true" />
@@ -193,11 +200,11 @@ function NetworkGroup({ upstream }: { upstream: FedUpstreamTopics }): JSX.Elemen
 }
 
 /** položky bloku `účet` — `ownerOnly` položku ukážeme len vlastníkovi */
-const ACCOUNT_ITEMS = [
-  { to: '/register', labelKey: 'nav.register', icon: '✎', ownerOnly: false },
-  { to: '/settings', labelKey: 'nav.settings', icon: '⚙', ownerOnly: false },
-  { to: '/admin/operators', labelKey: 'nav.operators', icon: '★', ownerOnly: true },
-] as const;
+const ACCOUNT_ITEMS: { to: string; labelKey: string; icon: IconName; ownerOnly: boolean }[] = [
+  { to: '/register', labelKey: 'nav.register', icon: 'edit', ownerOnly: false },
+  { to: '/settings', labelKey: 'nav.settings', icon: 'settings', ownerOnly: false },
+  { to: '/admin/operators', labelKey: 'nav.operators', icon: 'star', ownerOnly: true },
+];
 
 export function Sidebar(): JSX.Element {
   const { t } = useTranslation(['common', 'forum']);
@@ -223,7 +230,7 @@ export function Sidebar(): JSX.Element {
               className={({ isActive }) => `side-link${isActive ? ' active' : ''}`}
             >
               <span className="link-icon" aria-hidden="true">
-                {item.icon}
+                <Icon name={item.icon} />
               </span>
               {t(`common:${item.labelKey}`)}
             </NavLink>
@@ -242,7 +249,7 @@ export function Sidebar(): JSX.Element {
               className={({ isActive }) => `side-link${isActive ? ' active' : ''}`}
             >
               <span className="link-icon" aria-hidden="true">
-                {item.icon}
+                <Icon name={item.icon} />
               </span>
               {t(`common:${item.labelKey}`)}
             </NavLink>

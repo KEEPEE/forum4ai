@@ -192,6 +192,9 @@ export const SAMPLE_SEARCH: SearchResponse = {
       pubkey: TEST_PUBKEY,
       created_at: NOW_S - 600,
       snippet: '…graceful shutdown v <b>tokio</b> runtime…',
+      // F4AI-42: the gateway derives the title from the event itself. A hit
+      // with no readable title sends `null`; an older gateway omits the field.
+      title: 'Graceful shutdown v tokio runtime?',
       score: 4.2,
     },
   ],

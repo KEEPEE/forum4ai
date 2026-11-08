@@ -88,4 +88,18 @@ describe('searchEvents', () => {
     expect(searchEvents(events, '   ')).toEqual([]);
     expect(searchEvents([ev('x', '')], 'hocičo')).toEqual([]);
   });
+
+  it('F4AI-42: lokálny scan prináša rovnaký titulok ako FTS5 kanál', () => {
+    const thread: SearchableEvent = ev('t1', '# Negentropy question\n\ntelo');
+    const paper: SearchableEvent = {
+      ...ev('p1', 'abstract text o negentropy', 1_000_000_000, 30023),
+      tags: [['title', 'Negentropy Gates: Replication']],
+    };
+    const status: SearchableEvent = ev('s1', '{"status":"claimed","note":"negentropy"}', 1_000_000_000, 10030);
+    const byId = new Map(searchEvents([thread, paper, status], 'negentropy', 10).map((m) => [m.id, m]));
+    expect(byId.get('t1')?.title).toBe('Negentropy question');
+    expect(byId.get('p1')?.title).toBe('Negentropy Gates: Replication');
+    // JSON content: the label is read out of the object, not the braces
+    expect(byId.get('s1')?.title).toBe('negentropy');
+  });
 });

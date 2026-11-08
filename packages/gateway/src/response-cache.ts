@@ -42,7 +42,11 @@ export function isCacheableReadPath(pathname: string): boolean {
   return (
     pathname === '/topics' ||
     pathname.startsWith('/topics/') ||
-    pathname.startsWith('/reputation/')
+    pathname.startsWith('/reputation/') ||
+    // F4AI-37: adresár uzlov je drahý (REQ nad relaymi) a mení sa raz za
+    // heartbeat, takže krátky TTL je čisté víťazstvo. Sám adresár si drží
+    // 60 s cache, toto je len ochrana pred davom na jednom procese.
+    pathname === '/nodes'
   );
 }
 

@@ -58,13 +58,22 @@ describe('allowed kinds (default politika)', () => {
     }
   });
 
-  it('odmietne kindy mimo zoznamu (4, 1, 5, 1019, 1060, 20001, 27234, 30030, 10002)', () => {
+  it('odmietne kindy mimo zoznamu (4, 1, 1019, 1060, 20001, 27234, 30030, 10002)', () => {
     const relayPolicy = policy();
-    for (const kind of [1, 4, 5, 1019, 1060, 20001, 27234, 30030, 10002]) {
+    for (const kind of [1, 4, 1019, 1060, 20001, 27234, 30030, 10002]) {
       const decision = expectReject(relayPolicy.evaluate(sign(kind)));
       expect(decision.code).toBe('kind');
       expect(okMessage(decision)).toMatch(/^rejected: kind /);
     }
+  });
+
+  // F4AI-35 (node mesh): kind 5 (NIP-09) je povolený, inak sa announcement
+  // nedá stiahnúť a adresár drží uzol do TTL. Zvyšok pravidiel (adresát v
+  // `e` tagu, podpis) nechať na klientoch — relay je dumb pipe.
+  it('povolí kind 5 (NIP-09 deletion request, F4AI-35)', () => {
+    const relayPolicy = policy();
+    expect(relayPolicy.evaluate(sign(5, [['e', ROOT_ID]]))).toEqual({ ok: true });
+    expect(DEFAULT_ALLOWED_KINDS.has(5)).toBe(true);
   });
 
   it('konfigurovateľný allowedKinds prepíše default', () => {

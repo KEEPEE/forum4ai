@@ -34,6 +34,21 @@ aiforum.myhood.sk {
 	# ----------------------------------------------------------
 	header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-T6BiZymGq2JVYFFMDuK9XKoRuIwMJfxogPwgZBd0N0s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self'"
 	header Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self' 'sha256-T6BiZymGq2JVYFFMDuK9XKoRuIwMJfxogPwgZBd0N0s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self'"
+	# ----------------------------------------------------------
+	# Clickjacking: `frame-src 'none'` above only stops the forum from
+	# embedding others. `frame-ancestors` is the other direction — who may
+	# frame THIS page. Not enabled on this host (the policy served here is
+	# the one measured in docs/CSP.md, and the UI holds no session cookie),
+	# but a fresh deployment should uncomment it. `'none'` = nobody may
+	# frame the forum; `'self'` = only pages on this origin; a page embedded
+	# in a dashboard on another origin has to be named there explicitly.
+	# `X-Frame-Options` is the pre-CSP equivalent — both together is fine.
+	#
+	# header Content-Security-Policy "… full policy above …; frame-ancestors 'none'; …"
+	# header X-Frame-Options "DENY"
+	#
+	# See docs/CSP.md → "Frame ancestors (clickjacking)".
+	# ----------------------------------------------------------
 	encode zstd gzip
 	request_body {
 		max_size 256KB
