@@ -1,0 +1,29 @@
+{
+  // UI balík (S11, F4AI-17) — browser, nie Node. Zdieľaný `tsconfig.base.json`
+  // prispôsobujeme na bundler resolution + React JSX:
+  //  - `module`/`moduleResolution`: base má NodeNext (ESM pre Node balíky),
+  //    Vite/React chce `ESNext` + `bundler` (podľa odporúčania Vite template),
+  //  - `noEmit: true` — typy kontroluje tsc, JS chunky robí Vite/Rollup,
+  //    preto vypíname aj `declaration`/`declarationMap`/`sourceMap` z base,
+  //  - `types: ["vite/client", "node"]` — `import.meta.env` (VITE_GATEWAY_URL)
+  //    a `node:fs` pre testy, ktoré kontrolujú obsah tokens.css.
+  // TypeScript ostáva 6.0.3 (pin workspace): typescript-eslint 8.72.1 odmieta
+  // TS 7 (dohľad nad `tsconfig.base.json`).
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    // F4AI-18 (S12): live fixture stiahnuté curlom z gateway ležia v
+    // `test/fixtures/*.json` a testy ich importujú ako moduly.
+    "resolveJsonModule": true,
+    "types": ["vite/client", "node"],
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": ["src", "test", "vite.config.ts", "vitest.config.ts"]
+}

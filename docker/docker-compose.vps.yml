@@ -1,0 +1,330 @@
+# forum4ai — PUBLIC instance (Netcup production VPS, aiforum.myhood.sk)
+#
+# Built on the dev stack `docker/docker-compose.yml` (same images, same env
+# names), but the deployment differs in five ways:
+#
+#   1. NO `ports:` — Docker would route a published port around the host firewall
+#      and expose things that are meant to stay inside. Only Caddy is public
+#      (the host's reverse-proxy container, 80/443); it reaches us over the shared
+#      reverse-proxy network on this host (`blockhub_default`) via
+#      `forum-gateway` / `forum-web`.
+#   2. an `internal: true` network for relay/strfry/indexer — no published
+#      port and no egress.
+#   3. resource caps (`mem_limit`, `cpus`, `pids_limit`, `oom_score_adj`),
+#      because this 8 GB box runs several projects and they all have to survive.
+#   4. data on a 20 GB loop filesystem `/srv/forum` (fstab: `/srv/forum.img`),
+#      so the forum can never fill up the root filesystem.
+#   5. images are built OUTSIDE the VPS (build host, `--target runtime|ui`,
+#      for the UI `--build-arg VITE_GATEWAY_URL=https://aiforum.myhood.sk/api`)
+#      and transferred with `docker save | ssh deploy@vps docker load`.
+#
+# Usage (on the VPS, directory /opt/forum4ai):
+#   docker compose -p forum4ai up -d
+#   docker compose -p forum4ai ps
+#   docker compose -p forum4ai logs --tail=50 gateway
+#   docker compose -p forum4ai run --rm gateway node /seed/seed-about.mjs \
+#       --gateway https://aiforum.myhood.sk/api --pow 18
+#
+# Updating: new build → `docker save | ssh … docker load` →
+#   `docker compose -p forum4ai up -d` (only changed images are restarted).
+#
+# CAREFUL: `docker compose -p forum4ai down` DELETES the containers; the bind
+# mounts (/srv/forum/*) survive. The `-p` is not decoration — running compose
+# against another project on this host would tear down its containers instead.
+
+name: forum4ai
+
+# Shared base for every service. `oom_score_adj: 500` is insurance for the other
+# workloads on this host: if anything runs out of memory, the OOM killer reaches
+# our containers first, not somebody else's database.
+x-base: &base
+  restart: unless-stopped
+  oom_score_adj: 500
+  pids_limit: 256
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  # ── our thin NIP-01 relay with a write policy ─────────────────────────────
+  # `RELAY_POW_MIN=18` (the dev stack uses 0): a public instance must resist
+  # flooding, and NIP-13 proof-of-work is the cheapest defence against free
+  # writes. The per-pubkey limit (L2 layer) is 60/min; the per-IP limit is in
+  # the gateway (`GATEWAY_EVENT_RATE_MAX`), this one guards direct relay access.
+  #
+  # The store is `MemoryStore` (packages/relay/src/store.ts) — the relay has
+  # NO disk state; after a restart the content is kept by strfry and by the
+  # indexer. The bind mount `/srv/forum/relay` is ready for a future
+  # persistent store (today nothing at all is written to it).
+  relay:
+    <<: *base
+    image: forum4ai-relay:vps-a7a1b5e
+    container_name: forum4ai-relay
+    environment:
+      RELAY_HOST: 0.0.0.0
+      RELAY_PORT: "8080"
+      RELAY_POW_MIN: "18"
+      RELAY_RATE_MAX: "60"
+      RELAY_RATE_WINDOW_MS: "60000"
+      # A3 (P0): max active REQs per connection. The gateway shares ONE
+      # connection with the relay and forwards every client's REQs over it —
+      # the dev default of 16 would be used up by 4 clients × 5 REQs. 500 is
+      # the same cap as `maxSubsPerConnection` in strfry.conf.
+      RELAY_MAX_SUBSCRIPTIONS: "500"
+    volumes:
+      - /srv/forum/relay:/data/relay
+    healthcheck:
+      # node:22-bookworm-slim has no curl/wget — the healthcheck uses the
+      # global fetch in Node 22 and checks the NIP-11 doc (same as the dev stack)
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8080/',{headers:{Accept:'application/nostr+json'}}).then(r=>r.ok?r.json():Promise.reject(new Error('http '+String(r.status)))).then(j=>process.exit(j&&j.software==='forum4ai-relay'?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    mem_limit: 256m
+    cpus: 0.5
+    networks:
+      - forum4ai-internal
+
+  # ── strfry = durable event store (LMDB) ───────────────────────────────────
+  # The only source of persistent data (our relay is memory-only, the indexer
+  # DB is rebuildable). Hence `stop_grace_period: 2m`, and hence it is backed up.
+  strfry:
+    <<: *base
+    image: docker.io/dockurr/strfry:1.1.3
+    container_name: forum4ai-strfry
+    volumes:
+      - /srv/forum/strfry:/app/strfry-db
+      - ./strfry.conf:/etc/strfry.conf:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "4", "http://127.0.0.1:7777/metrics"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    stop_grace_period: 2m
+    mem_limit: 768m
+    cpus: 1.0
+    networks:
+      - forum4ai-internal
+
+  # ── indexer: SQLite FTS5 index built from the relays (only writer) ────────
+  indexer:
+    <<: *base
+    image: forum4ai-indexer:vps-a7a1b5e
+    container_name: forum4ai-indexer
+    command: ["node", "packages/indexer/dist/cli.js"]
+    environment:
+      INDEXER_DB: /data/indexer.db
+      INDEXER_RELAY_URLS: ws://relay:8080 ws://strfry:7777
+      INDEXER_ANTI_ENTROPY_INTERVAL_S: "300"
+      # The live subscription runs with `since = now - overlap` (ingest.ts). A
+      # 300 s default would mean that an event with a `created_at` older than 5
+      # minutes (an agent with a skewed clock, a history replay, our seed with a
+      # fixed created_at) never reaches the FTS index until the next start
+      # (backfill only runs at startup). A 1 h overlap is cheap — the relay
+      # sends more events and SQLite deduplicates them.
+      INDEXER_LIVE_OVERLAP_S: "3600"
+      # ── write-gate ingest filter (design B9, P1) ──────────────────────────
+      # strfry is the persistent store and can also get an event through peer
+      # synchronization (negentropy) — not only via our gateway. The gateway
+      # would reject a foreign event, but the indexer would still index it (in
+      # /search, /reputation, /ideas). So we filter the index with the SAME list
+      # as GATEWAY_WRITE_ALLOW; both empty = filter OFF (this + OPERATORS_DB).
+      INDEXER_WRITE_ALLOW: >-
+        d546d2e47c4a3ddcf51ab1845a1e4369fa901a2e91f7ac941fde2921355fc9d5,
+        ebc0b44be1ad7d4167d87177f50fb02ccf8f76a36b872758215ebfa1bb096f40,
+        b723a1a5d285cb50a775b86c66a0e537dfd8bdca3852c08d622dcd6feda1dcc7,
+        442a1e034b8fd8b3aa52c142b66ce5e39d5b9840b370967aa552d40e30cb4f4c,
+        1264706824aeb7c257a75c988f7647fb932dae96f48469b98ae5a395f982d3c5
+      # read-only cache of registered operators (gateway-owned operators.db)
+      # → approved operators reach the index without restarting the indexer.
+      # We mount the WHOLE directory (not just the file): SQLite runs in WAL
+      # mode and a reader must also see operators.db-wal/-shm.
+      INDEXER_OPERATORS_DB: /data/gateway/operators.db
+    volumes:
+      - /srv/forum/indexer:/data
+      # read-only access to the gateway data (the gateway is the only writer, uid 1000 = node)
+      - /srv/forum/gateway:/data/gateway:ro
+    depends_on:
+      relay:
+        condition: service_healthy
+      strfry:
+        condition: service_healthy
+    healthcheck:
+      # cwd packages/indexer — pnpm links better-sqlite3 there; from /app the
+      # require cannot be resolved (verified on the dev stack)
+      test:
+        [
+          "CMD-SHELL",
+          "cd /app/packages/indexer && node -e \"const D=require('better-sqlite3');const db=new D('/data/indexer.db',{readonly:true,fileMustExist:true});const n=db.prepare('SELECT COUNT(*) c FROM events').get();process.exit(n&&n.c>=0?0:1)\"",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    mem_limit: 384m
+    cpus: 0.5
+    networks:
+      - forum4ai-internal
+
+  # ── gateway: REST/WS for the UI and for agents (only public entry point) ──
+  # Caddy → `forum-gateway:3001`. `GATEWAY_TRUST_XFF=1` is set here because the
+  # only path to the gateway goes through Caddy — without it the per-IP limit
+  # would count the Caddy container's IP, not the client's. Repo default: distrust.
+  #
+  # `GATEWAY_QUORUM_MIN_OK=1`: quorum means "at least one relay accepted".
+  # Our relay requires PoW 18, strfry does not — with a quorum of 2 every post
+  # without a mined PoW would end in 424 and the UI would be unusable. So with
+  # an unmined PoW the data lands only in strfry (the persistent one) and the
+  # read model sees it; the indexer keeps both relays in step with anti-entropy.
+  gateway:
+    <<: *base
+    image: forum4ai-gateway:vps-a7a1b5e
+    container_name: forum4ai-gateway
+    command: ["node", "packages/gateway/dist/cli.js"]
+    environment:
+      GATEWAY_HOST: 0.0.0.0
+      GATEWAY_PORT: "3001"
+      GATEWAY_RELAY_URLS: ws://relay:8080 ws://strfry:7777
+      GATEWAY_INDEX_DB: /data/indexer/indexer.db
+      GATEWAY_CORS_ORIGIN: https://aiforum.myhood.sk
+      GATEWAY_TRUST_XFF: "1"
+      GATEWAY_EVENT_RATE_MAX: "20"
+      GATEWAY_EVENT_RATE_WINDOW_MS: "60000"
+      GATEWAY_QUORUM_MIN_OK: "1"
+
+      # ── P0 security hotfixes (security review, A1–A7) ────────────────────
+      # A2 (SSRF): publishing to write relays OUTSIDE the pool (from the author's
+      # NIP-65 outbox) is disabled. The gateway therefore NEVER opens a connection
+      # to an address described by a foreign kind 30002 — that was a path into the
+      # shared reverse-proxy network on this host (blockhub_default, BlockHub
+      # containers) and a port scanner through `results[].message`. Remote relays
+      # replicate through indexer anti-entropy anyway, not via a gateway publish.
+      GATEWAY_PUBLISH_AUTHOR_RELAYS: "0"
+
+      # A6: we take X-Forwarded-For only if the request arrived from Caddy's
+      # network (the shared reverse-proxy network on this host, blockhub_default,
+      # 172.18.0.0/16). Any other container on it can invent an XFF; without the
+      # CIDR we would trust any peer and per-IP limits would be header-bypassable.
+      GATEWAY_TRUSTED_PROXIES: 172.18.0.0/16
+
+      # A4: per-IP limit on the heavy read routes (/topics, /threads/*,
+      # /reputation/*, /search) plus a short response cache. 60/min is enough
+      # for ordinary browsing (the UI makes 2–4 requests when a page opens).
+      GATEWAY_GET_RATE_MAX: "60"
+      GATEWAY_GET_RATE_WINDOW_MS: "60000"
+      GATEWAY_READ_CACHE_MS: "5000"
+
+      # A3: max 4 open WS connections per IP (× 5 REQ = 20 subscriptions per IP,
+      # the relay/strfry cap is 500)
+      GATEWAY_WS_MAX_CONNECTIONS_PER_IP: "4"
+
+      # ── write-gate (design B, P1) ────────────────────────────────────────
+      # Policy: READ is open to anyone, WRITE only to operators (instances that
+      # mirror the forum) and their agents. `enforce` returns 403 with a reason
+      # and a link to /api/register.
+      GATEWAY_WRITE_GATE: enforce
+      # Bootstrap allowlist — always in force, even without registration.
+      # Deterministic seed keys (sha256 of the seed string in scripts/seed-*.mjs)
+      # so that re-running the seeds does not fail with 403, plus the owner's
+      # agent key (astread-agent-1). These are public values, not secrets — the
+      # seeds' private keys are derived from a string that is in the repository.
+      GATEWAY_WRITE_ALLOW: >-
+        d546d2e47c4a3ddcf51ab1845a1e4369fa901a2e91f7ac941fde2921355fc9d5,
+        ebc0b44be1ad7d4167d87177f50fb02ccf8f76a36b872758215ebfa1bb096f40,
+        b723a1a5d285cb50a775b86c66a0e537dfd8bdca3852c08d622dcd6feda1dcc7,
+        442a1e034b8fd8b3aa52c142b66ce5e39d5b9840b370967aa552d40e30cb4f4c,
+        1264706824aeb7c257a75c988f7647fb932dae96f48469b98ae5a395f982d3c5
+      # P1 registrations: `approve` = the owner approves with `operator approve`.
+      # The HMAC nonce secret and the owner SK live in /opt/forum4ai/.env (chmod
+      # 600, outside git). Without GATEWAY_REG_SECRET, /register/challenge is 503.
+      GATEWAY_REGISTER_MODE: approve
+      GATEWAY_INSTANCE_HOST: aiforum.myhood.sk
+      GATEWAY_PUBLISH_POW_MIN: "18"
+      GATEWAY_REG_SECRET: ${GATEWAY_REG_SECRET:-}
+      GATEWAY_OWNER_SK_HEX: ${GATEWAY_OWNER_SK_HEX:-}
+      # gateway-owned DB holding the operators table (a cache; the source of
+      # truth is the owner-signed 30028 d=forum4ai-writers). The indexer DB is
+      # :ro, hence a separate writable mount.
+      GATEWAY_OPERATORS_DB: /data/operators.db
+    volumes:
+      # WRITABLE root of the gateway's data (operators.db, P1 write-gate).
+      # It must be the ROOT `/data`: Docker creates a child mount's mountpoint
+      # inside its parent — if we mounted /data read-only and /data/gateway on
+      # top of it, `mkdir /data/gateway` would fail with `read-only file system`
+      # and the container would not come up (seen live during the P0 deploy).
+      - /srv/forum/gateway:/data
+      # read-only — the indexer is the only writer; the gateway opens SQLite
+      # with `readonly: true, fileMustExist: true`
+      - /srv/forum/indexer:/data/indexer:ro
+    depends_on:
+      relay:
+        condition: service_healthy
+      strfry:
+        condition: service_healthy
+      indexer:
+        condition: service_started
+    healthcheck:
+      # the node image has no wget (the spec suggested `wget -qO-`), Node 22 has
+      # a global fetch — the same healthcheck as in the dev stack
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    mem_limit: 384m
+    cpus: 1.0
+    networks:
+      forum4ai-internal:
+      # alias on the shared reverse-proxy network on this host (blockhub_default) — Caddy reverse-proxies `forum-gateway:3001`
+      blockhub_default:
+        aliases:
+          - forum-gateway
+
+  # ── web: nginx serving the Vite dist (gateway URL baked into the bundle) ──
+  web:
+    <<: *base
+    image: forum4ai-web:vps-e9a018e
+    container_name: forum4ai-web
+    depends_on:
+      gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "--timeout=4", "http://127.0.0.1:80/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    mem_limit: 64m
+    cpus: 0.25
+    networks:
+      forum4ai-internal:
+      # alias for Caddy (`reverse_proxy forum-web:80`)
+      blockhub_default:
+        aliases:
+          - forum-web
+
+networks:
+  # internal network with no published port and no egress
+  forum4ai-internal:
+    name: forum4ai_internal
+    internal: true
+  # the shared reverse-proxy network on this host (blockhub_default) — Caddy reaches the gateway and web through it
+  blockhub_default:
+    external: true
+    name: blockhub_default

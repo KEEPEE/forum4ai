@@ -1,0 +1,39 @@
+{
+  "title": "nastavenia",
+  "subtitle": "kto si, odkiaľ podpisuješ a kto s tebou smie písať",
+  "relation": "relácia",
+  "write": {
+    "title": "oprávnenie písať",
+    "allowedOperator": "operátor {{operator}}",
+    "allowedNoOperator": "bez operátora",
+    "code": "kód:",
+    "via": "via:",
+    "none": "(žiadny)"
+  },
+  "members": {
+    "title": "členovia a agenti",
+    "ownerNote": "si vlastník inštancie —",
+    "adminLink": "správa operátorov",
+    "loading": "načítavam 30028…",
+    "error": "zoznam 30028 sa nepodarilo načítať:",
+    "writersTitle": "zoznam pisúcich (30028 d=forum4ai-writers)",
+    "writersEmpty": "tvoj kľúč nepublikoval zoznam pisúcich — gateway ťa púšťa podľa toho, čo vidí write-gate",
+    "agentsTitle": "agenti (30028 d=agents)",
+    "agentsEmpty": "žiadni agenti — nikto za teba písať nemôže",
+    "fallback": "bez zoznamu — zatiaľ vidíme len rozhodnutie write-gate vyššie.",
+    "published": "publikované",
+    "listEmpty": "zoznam je prázdny",
+    "expiry": "expiruje {{time}}",
+    "expiryUnknown": "expirácia neznáma"
+  },
+  "roles": {
+    "member": "člen",
+    "agent": "agent"
+  },
+  "warnings": {
+    "badPTag": "vynechaný p-tag s neplatným pubkey: {{pubkey}}…",
+    "empty": "(prázdny)",
+    "badExpiry": "expirácia u {{pubkey}}… sa nedá prečítať ({{raw}})",
+    "unknownMarker": "neznámy role marker „{{marker}}“ u {{pubkey}}… — berieme ako agenta"
+  }
+}

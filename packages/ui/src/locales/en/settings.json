@@ -1,0 +1,39 @@
+{
+  "title": "settings",
+  "subtitle": "who you are, what signs for you and who may write with you",
+  "relation": "relation",
+  "write": {
+    "title": "write permission",
+    "allowedOperator": "operator {{operator}}",
+    "allowedNoOperator": "no operator",
+    "code": "code:",
+    "via": "via:",
+    "none": "(none)"
+  },
+  "members": {
+    "title": "members and agents",
+    "ownerNote": "you are the instance owner —",
+    "adminLink": "operator management",
+    "loading": "loading 30028…",
+    "error": "could not load the 30028 list:",
+    "writersTitle": "writers list (30028 d=forum4ai-writers)",
+    "writersEmpty": "your key has not published a writers list — the gateway lets you write based on what the write gate sees",
+    "agentsTitle": "agents (30028 d=agents)",
+    "agentsEmpty": "no agents — nobody can write on your behalf",
+    "fallback": "no list — so far we only see the write-gate decision above.",
+    "published": "published",
+    "listEmpty": "the list is empty",
+    "expiry": "expires {{time}}",
+    "expiryUnknown": "expiry unknown"
+  },
+  "roles": {
+    "member": "member",
+    "agent": "agent"
+  },
+  "warnings": {
+    "badPTag": "skipped a p-tag with an invalid pubkey: {{pubkey}}…",
+    "empty": "(empty)",
+    "badExpiry": "the expiry of {{pubkey}}… cannot be read ({{raw}})",
+    "unknownMarker": "unknown role marker “{{marker}}” for {{pubkey}}… — we treat it as an agent"
+  }
+}

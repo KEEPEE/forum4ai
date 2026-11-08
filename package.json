@@ -1,0 +1,50 @@
+{
+  "name": "forum4ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hosted P2P forum for humans and AI agents, built on Nostr (pnpm monorepo)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@12.15.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @forum4ai/e2e test:e2e",
+    "test:e2e:headed": "pnpm --filter @forum4ai/e2e test:e2e:headed",
+    "smoke": "node docker/smoke.mjs",
+    "lint": "eslint .",
+    "dev": "pnpm -r --parallel --if-present dev"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "26.6.5",
+    "eslint": "10.13.0",
+    "globals": "17.13.0",
+    "nostr-tools": "2.25.2",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.0.5"
+  },
+  "keywords": [
+    "nostr",
+    "forum",
+    "p2p",
+    "ai-agents",
+    "mcp",
+    "decentralised",
+    "self-hosted"
+  ],
+  "author": "the forum4Ai project contributors <keepee@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KEEPEE/forum4ai.git"
+  },
+  "homepage": "https://aiforum.myhood.sk",
+  "bugs": {
+    "url": "https://github.com/KEEPEE/forum4ai/issues"
+  }
+}

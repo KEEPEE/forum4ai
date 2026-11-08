@@ -1,0 +1,915 @@
+/*
+ * forum4Ai — diznový systém (Phase 3a)
+ * ======================================
+ * Tri témy via `data-theme` na `<html>`:
+ *
+ *   glass-dark   DEFAULT — deep-forest glassmorphismus, emerald + gold
+ *                (TemplateMo 607 „Glass Admin", tm-607)
+ *   glass-light  svetlá varianta tej istej identity (tm-607 light)
+ *   nexaverse    neon tyrkysová / magenta / fialová (TemplateMo 603)
+ *
+ * Pravidlá:
+ *  1. EVERY color lives here. `app.css`/`base.css`/`components.css` nesmú
+ *     písať farby natvrdo (test `tokens.test.ts` stráži app.css), inak
+ *     preklop témy nefunguje.
+ *  2. Názvy tokenov z tm-603 (`--primary`, `--secondary`, `--accent`,
+ *     `--dark-1..3`, `--glass-bg`, `--glass-border`, `--glow-cyan`,
+ *     `--glow-magenta`) ostávajú KANONICKÉ — each theme redefines them,
+ *     komponenty sa tvária podľa nich. `--glow-cyan`/`--glow-magenta` sú
+ *     preto v glass témach emerald/gold (nie cyan/magenta): sú to dva
+ *     „glow" sloty, nie dve farby.
+ *  3. Prvý blok (root + nexaverse) je DOSLOVNO kópiou `:root` zo šablóny
+ *     tm-603 (názvy aj hodnoty) — test `tokens.test.ts` kontroluje, že sa
+ *     nelišia. Vlastné aliasy sú označené DERIVED a kópiu nedegradujú.
+ *
+ * Poradie blokov je súčasťou dizajnu: root → glass-dark → glass-light.
+ * `:root` aj `[data-theme=…]` majú rovnakú špecifickosť (0,1,0), takže
+ * téma vyhráva práve preto, že je v súbore neskôr. Nexaverse preto ostáva
+ * v prvom bloku (je to jeho 1:1 kópia) a glass témy ho prekrývajú.
+ */
+
+/* ===== 1:1 kópia :root zo šablóny tm-603 (Nexaverse) + DERIVED ===== */
+:root,
+[data-theme='nexaverse'] {
+	/* --- pozadie (dark-1/2/3 zo šablóny) ------------------------------ */
+	--dark-1: #0a0a12;
+	--dark-2: #12121f;
+	--dark-3: #1a1a2e;
+
+	/* --- sklo (glass-bg / glass-border zo šablóny) -------------------- */
+	--glass-bg: rgba(255, 255, 255, 0.03);
+	--glass-border: rgba(255, 255, 255, 0.08);
+
+	/* --- akcenty (primary / secondary / accent zo šablóny) ------------ */
+	--primary: #00f0ff;
+	--secondary: #ff00d4;
+	--accent: #9d4edd;
+
+	/* --- glow (glow-cyan / glow-magenta zo šablóny) ------------------- */
+	--glow-cyan: rgba(0, 240, 255, 0.4);
+	--glow-magenta: rgba(255, 0, 212, 0.4);
+
+	/* ===== DERIVED — pozadie a vrstvy ===== */
+	--bg-0: #06060d;
+	--bg-grad-1: #0a0a12;
+	--bg-grad-2: #12121f;
+	--bg-grad-3: #1a1a2e;
+	--bg-mist-1: rgba(0, 240, 255, 0.4);
+	--bg-mist-2: rgba(255, 0, 212, 0.4);
+	--bg-mist-3: rgba(157, 78, 221, 0.3);
+	/* DERIVED: intenzita mlhy nie je v šablóne — tá mala orb-y naplno a
+	   žiadnu vrstvu mlhy navyše. My oboje vrstvíme (body gradient +
+	   .ambient-bg::before + 3 orb-y), takže každú stiahneme: inak sa neon
+	   rozleje do jednolitej fialovej a karty splynú s pozadím. */
+	/* audit 7.5 P2-9: karty 2–3 vo feede sa pri plnej intenzite preliate
+	   do jednolitej magenty — mlhy aj orb-y idú dole (DERIVED, nie šablóna) */
+	--bg-mist-opacity: 0.45;
+	--orb-opacity: 0.5;
+	--grid-opacity: 1;
+	--grid-line: rgba(255, 255, 255, 0.06);
+
+	/* ===== DERIVED — povrchy ===== */
+	--glass-bg-hover: rgba(255, 255, 255, 0.05);
+	--glass-bg-accent: rgba(0, 240, 255, 0.08);
+	--glass-strong: rgba(255, 255, 255, 0.06);
+	--glass-highlight: rgba(255, 255, 255, 0.12);
+	--glass-hairline: rgba(255, 255, 255, 0.2);
+	--surface-1: rgba(255, 255, 255, 0.03);
+	--surface-2: rgba(255, 255, 255, 0.06);
+	--surface-3: rgba(18, 18, 31, 0.94);
+	--surface-sunken: rgba(4, 4, 10, 0.6);
+	--surface-accent: rgba(0, 240, 255, 0.1);
+
+	/* ===== DERIVED — text ===== */
+	--text-1: #ffffff;
+	--text-2: rgba(255, 255, 255, 0.78);
+	--text-muted: rgba(255, 255, 255, 0.55);
+	/* audit 7.5 P2-11: 11px texty (adresa papiera, caption) s .38 nedosahujú
+	   ani 3:1 — DERIVED strop posúvame na .48 */
+	--text-dim: rgba(255, 255, 255, 0.48);
+	--text-inverse: #06060d;
+
+	/* ===== DERIVED — akcenty (doplňkové sloty) ===== */
+	--primary-strong: #7ff8ff;
+	--primary-deep: #00b8c8;
+	--secondary-strong: #ff6ae4;
+	--secondary-deep: #d400b0;
+	--accent-strong: #b473f0;
+	--accent-deep: #7b3fb8;
+	--on-accent: #04101a;
+	--accent-fill-1: #00f0ff;
+	--accent-fill-2: #9d4edd;
+	--accent-fill-3: #ff00d4;
+	--brand-gradient: linear-gradient(135deg, var(--primary) 0%, #ffffff 50%, var(--secondary) 100%);
+	--logo-glow: drop-shadow(0 0 20px var(--glow-cyan));
+
+	/* ===== DERIVED — sémantické stavy ===== */
+	--ok: #34e2a4;
+	--info: #00f0ff;
+	--warn: #ffd166;
+	--error: #ff5c8a;
+	--ok-glow: rgba(52, 226, 164, 0.35);
+	--info-glow: rgba(0, 240, 255, 0.32);
+	--warn-glow: rgba(255, 209, 102, 0.3);
+	--error-glow: rgba(255, 92, 138, 0.32);
+	--ok-soft: rgba(52, 226, 164, 0.12);
+	--info-soft: rgba(0, 240, 255, 0.12);
+	--warn-soft: rgba(255, 209, 102, 0.12);
+	--error-soft: rgba(255, 92, 138, 0.12);
+
+	/* ===== DERIVED — glow a tiene ===== */
+	--glow-accent: rgba(157, 78, 221, 0.3);
+	--glow-primary: rgba(0, 240, 255, 0.35);
+	--glow-secondary: rgba(255, 0, 212, 0.3);
+	--shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+	--shadow-2: 0 4px 14px -2px rgba(0, 0, 0, 0.4);
+	--shadow-3: 0 12px 28px -8px rgba(0, 0, 0, 0.45);
+	--shadow-4: 0 20px 40px -12px rgba(0, 0, 0, 0.5);
+	--shadow-5: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+	--shadow-card: 0 20px 40px rgba(0, 0, 0, 0.3);
+	--shadow-card-strong: 0 20px 40px rgba(0, 0, 0, 0.4);
+	--shadow-glow: 0 0 30px rgba(0, 200, 220, 0.2);
+	--shadow-hover: 0 18px 38px -14px rgba(0, 0, 0, 0.55), 0 0 26px rgba(0, 240, 255, 0.16);
+	--shadow-inset-hairline: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+	--focus-ring: #00f0ff;
+	--focus-ring-shadow: 0 0 0 2px rgba(0, 240, 255, 0.4), 0 0 18px rgba(0, 240, 255, 0.25);
+
+	/* ===== DERIVED — sklo (blur / saturate) ===== */
+	--blur-glass: 20px;
+	--blur-glass-sm: 12px;
+	--blur-glass-lg: 28px;
+	--saturate-glass: 160%;
+
+	/* ===== DERIVED — radius / spacing / typography ===== */
+	--radius-xs: 8px;
+	--radius-sm: 12px;
+	--radius-md: 16px;
+	--radius-card: 20px;
+	--radius-tile: 24px;
+	--radius-xl: 28px;
+	--radius-pill: 999px;
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-5: 20px;
+	--space-6: 24px;
+	--space-8: 32px;
+	--space-10: 40px;
+	--space-12: 48px;
+	--font-display: 'Syne Variable', 'Syne', sans-serif;
+	--font-body: 'Outfit', 'Outfit Variable', sans-serif;
+	--font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+	--fs-xs: 11px;
+	--fs-sm: 13px;
+	--fs-md: 14px;
+	--fs-lg: 16px;
+	--fs-xl: 19px;
+	--fs-2xl: 24px;
+	--fs-3xl: 30px;
+	--fs-4xl: 38px;
+	--lh-tight: 1.25;
+	--lh-snug: 1.45;
+	--lh-body: 1.65;
+	--ls-caps: 2px;
+	--ls-wide: 4px;
+
+	/* ===== DERIVED — motion ===== */
+	--ease-pop: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	--ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+	--dur-fast: 0.18s;
+	--dur-med: 0.3s;
+	--dur-slow: 0.5s;
+
+	/* ===== DERIVED — layout ===== */
+	--container-max: 1280px;
+	--sidebar-w: 280px;
+
+	/* ===== DERIVED — chrome (scrollbar / selection) ===== */
+	--scrollbar-thumb: linear-gradient(180deg, var(--primary), var(--accent));
+	--scrollbar-track: rgba(255, 255, 255, 0.04);
+	--selection-bg: rgba(0, 240, 255, 0.28);
+	--selection-fg: #ffffff;
+	--color-scheme: dark;
+
+	/* ===== DERIVED — Phase 3b: chart palette (DSL `var(--chart-N)`) =====
+	   Sérii i patrí --chart-<i>, preto DSL neobsahuje farby a graf sa
+	   preklikne s témou bez pre-renderu. Obe číselné rady (0..7 aj 1..8)
+	   sú platné: 0..7 je kanonický index, 1..8 alias pre design doc. */
+	--chart-0: #00f0ff;
+	--chart-1: #ff00d4;
+	--chart-2: #9d4edd;
+	--chart-3: #a3ff67;
+	--chart-4: #ffd166;
+	--chart-5: #4cc9f0;
+	--chart-6: #ff6ae4;
+	--chart-7: #c77dff;
+	/* audit 7.5 P2-7: mriežka sa kreslí čiarkovane — needs ~.10 na tmavom */
+	--chart-grid: rgba(255, 255, 255, 0.1);
+	--chart-axis: rgba(255, 255, 255, 0.35);
+	--chart-label: rgba(255, 255, 255, 0.6);
+
+	/* ===== DERIVED — Phase 3b: diagramy (mermaid themeVariables) ===== */
+	--diagram-bg: #12121f;
+	--diagram-fg: #ffffff;
+	--diagram-line: rgba(0, 240, 255, 0.55);
+	--diagram-accent: #9d4edd;
+	--diagram-note: rgba(255, 209, 102, 0.16);
+	--diagram-primary: rgba(0, 240, 255, 0.16);
+	--diagram-secondary: rgba(255, 0, 212, 0.14);
+
+	/* ===== DERIVED — Phase 3b: prose / markdown / KaTeX ===== */
+	--prose-max: 74ch;
+	--prose-link: var(--primary);
+	--code-bg: rgba(4, 4, 10, 0.55);
+	--code-fg: #d8f6ff;
+	--code-border: rgba(255, 255, 255, 0.1);
+	--math-fg: #ffffff;
+
+	/* ===== DERIVED — audit 7.5: jeden sklenený rám pre bohatý obsah (P1-1) ===
+	   .chart-block/.mermaid-block/.figure-block/.equation-block zdieľajú
+	   --figure-* namiesto --surface-sunken — doska „diery do pozadia"
+	   (najmä v glass-light) mizne, rám je ten istý ako .glass-card. */
+	--figure-bg: linear-gradient(135deg, rgba(0, 240, 255, 0.05), rgba(157, 78, 221, 0.05)), rgba(255, 255, 255, 0.03);
+	--figure-border: var(--glass-border);
+	--figure-radius: var(--radius-md);
+	--figure-shadow: var(--shadow-inset-hairline);
+
+	/* ===== DERIVED — audit 7.5 P1-3: gradientové tyče (.progress-fill) =====
+	   vrchol tyče = --chart-N, spodok = --chart-N-end; SVG renderer dáva
+	   na každú sériu jeden <linearGradient> so stop-color:var(...), takže
+	   graf sa prekreslí s témou bez pre-renderu. Sada 0 je z auditu,
+	   1..7 sú DERIVED varianty odtieňov tej ktorej série v danej téme. */
+	--chart-0-end: #9d4edd;
+	--chart-1-end: #9d4edd;
+	--chart-2-end: #4cc9f0;
+	--chart-3-end: #34e2a4;
+	--chart-4-end: #ff6ae4;
+	--chart-5-end: #7b3fb8;
+	--chart-6-end: #d400b0;
+	--chart-7-end: #9d4edd;
+	--chart-bar-radius: 6px;
+	--chart-bar-glow: drop-shadow(0 0 10px rgba(0, 240, 255, 0.35));
+
+	/* ===== DERIVED — audit 7.5 P1-4: zaoblené uzly + glow diagramov ===== */
+	--diagram-node-radius: 10px;
+	--diagram-node-glow: drop-shadow(0 0 8px rgba(0, 240, 255, 0.35));
+
+	/* ===== DERIVED — audit 7.5 P1-7: tagline =====
+	   magenta na tyrkysovej mala ~2:1; v nexaverse ide tagline po bielej
+	   (62 %), glass témy si nechávajú súčasný mix secondary/text-muted. */
+	--tagline-fg: rgba(255, 255, 255, 0.62);
+
+	/* ===== DERIVED — audit 7.5 P2-5: farba superscript citácií =====
+	   --accent je v tm-607 alert farba (korálová) — citácia vyzerá ako
+	   chyba; posúvame ju na secondary slot témy. */
+	--cite-fg: var(--secondary-strong);
+}
+
+/* aliasy --chart-1..8 (design doc Q3) — rovnaká paleta, posunutý index */
+:root {
+	--chart-8: var(--chart-7);
+}
+
+/* ==========================================================================
+   glass-dark — DEFAULT (tm-607 Glass Admin: emerald + gold on deep forest)
+   ========================================================================== */
+[data-theme='glass-dark'] {
+	/* --- pozadie: deep forest, o vrstvu hlbšie než originál (#0a0f0d) -- */
+	--dark-1: #070f0b;
+	--dark-2: #0d1a14;
+	--dark-3: #16281e;
+	--bg-0: #040907;
+	--bg-grad-1: #08120e;
+	--bg-grad-2: #0f2118;
+	--bg-grad-3: #1a3325;
+
+	/* --- mlhy a orb-y: emerald / gold / coral -------------------------- */
+	--bg-mist-1: rgba(16, 185, 129, 0.42);
+	--bg-mist-2: rgba(212, 165, 116, 0.34);
+	--bg-mist-3: rgba(224, 122, 95, 0.22);
+	--bg-mist-opacity: 0.5;
+	--orb-opacity: 0.55;
+	--grid-opacity: 0;
+	--grid-line: rgba(255, 255, 255, 0.04);
+
+	/* --- sklo ---------------------------------------------------------- */
+	--glass-bg: rgba(255, 255, 255, 0.055);
+	--glass-border: rgba(255, 255, 255, 0.12);
+	--glass-bg-hover: rgba(255, 255, 255, 0.085);
+	--glass-bg-accent: rgba(52, 211, 153, 0.1);
+	--glass-strong: rgba(255, 255, 255, 0.09);
+	--glass-highlight: rgba(255, 255, 255, 0.12);
+	--glass-hairline: rgba(255, 255, 255, 0.22);
+	--surface-1: rgba(255, 255, 255, 0.045);
+	--surface-2: rgba(255, 255, 255, 0.08);
+	--surface-3: rgba(11, 22, 17, 0.94);
+	--surface-sunken: rgba(3, 8, 6, 0.55);
+	--surface-accent: rgba(212, 165, 116, 0.12);
+
+	/* --- text ---------------------------------------------------------- */
+	--text-1: #f5f5f4;
+	--text-2: rgba(245, 245, 244, 0.8);
+	--text-muted: rgba(245, 245, 244, 0.66);
+	--text-dim: rgba(245, 245, 244, 0.52);
+	--text-inverse: #06231a;
+
+	/* audit 7.5 P1-5: tm-607 kreslí nadpisy Outfitom + Space Mono; Syne je
+	   signature tm-603 a v 11px uppercase robí captiony/nečitateľné
+	   („p50" vyzerá ako „pso"). Glass témy preto prepínajú --font-display. */
+	--font-display: 'Outfit', 'Outfit Variable', sans-serif;
+
+	/* --- akcenty: emerald (primary) + gold (secondary) + coral --------- */
+	--primary: #34d399;
+	--primary-strong: #6ee7bf;
+	--primary-deep: #059669;
+	--secondary: #d4a574;
+	--secondary-strong: #e8c9a0;
+	--secondary-deep: #b45309;
+	--accent: #e07a5f;
+	--accent-strong: #f09b83;
+	--accent-deep: #b8543b;
+	--emerald: #10b981;
+	--emerald-bright: #34d399;
+	--emerald-deep: #047857;
+	--gold: #d4a574;
+	--gold-bright: #f0d3a6;
+	--gold-deep: #a8763e;
+	--on-accent: #1c1206;
+	--accent-fill-1: #e8c9a0;
+	--accent-fill-2: #c08a4e;
+	--accent-fill-3: #34d399;
+	--brand-gradient: linear-gradient(115deg, #34d399 0%, #eaf7ef 38%, #e8c9a0 68%, #d4a574 100%);
+	--logo-glow: drop-shadow(0 0 18px rgba(52, 211, 153, 0.55));
+
+	/* --- sémantické stavy --------------------------------------------- */
+	--ok: #22c55e;
+	--info: #38bdf8;
+	--warn: #eab308;
+	--error: #f87171;
+	--ok-glow: rgba(34, 197, 94, 0.35);
+	--info-glow: rgba(56, 189, 248, 0.32);
+	--warn-glow: rgba(234, 179, 8, 0.3);
+	--error-glow: rgba(248, 113, 113, 0.32);
+	--ok-soft: rgba(34, 197, 94, 0.13);
+	--info-soft: rgba(56, 189, 248, 0.13);
+	--warn-soft: rgba(234, 179, 8, 0.13);
+	--error-soft: rgba(248, 113, 113, 0.13);
+
+	/* --- glow a tiene ------------------------------------------------- */
+	--glow-cyan: rgba(52, 211, 153, 0.4);
+	--glow-magenta: rgba(212, 165, 116, 0.35);
+	--glow-accent: rgba(224, 122, 95, 0.3);
+	--glow-primary: rgba(52, 211, 153, 0.35);
+	--glow-secondary: rgba(212, 165, 116, 0.3);
+	--shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+	--shadow-2: 0 4px 14px -2px rgba(0, 0, 0, 0.35);
+	--shadow-3: 0 12px 28px -8px rgba(0, 0, 0, 0.42);
+	--shadow-4: 0 20px 40px -12px rgba(0, 0, 0, 0.5);
+	--shadow-5: 0 30px 60px -12px rgba(0, 0, 0, 0.58);
+	--shadow-card: 0 20px 40px rgba(0, 0, 0, 0.32);
+	--shadow-card-strong: 0 24px 48px rgba(0, 0, 0, 0.42);
+	--shadow-glow: 0 0 24px rgba(52, 211, 153, 0.22);
+	--shadow-hover: 0 18px 38px -14px rgba(0, 0, 0, 0.5), 0 0 26px rgba(52, 211, 153, 0.14);
+	--shadow-inset-hairline: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+	--focus-ring: #34d399;
+	--focus-ring-shadow: 0 0 0 2px rgba(52, 211, 153, 0.4), 0 0 18px rgba(52, 211, 153, 0.25);
+
+	/* --- chrome ------------------------------------------------------- */
+	--scrollbar-thumb: linear-gradient(180deg, rgba(52, 211, 153, 0.75), rgba(212, 165, 116, 0.75));
+	--scrollbar-track: rgba(255, 255, 255, 0.04);
+	--selection-bg: rgba(212, 165, 116, 0.32);
+	--selection-fg: #ffffff;
+	--color-scheme: dark;
+
+	/* --- Phase 3b: grafy / diagramy / prose --------------------------- */
+	--chart-0: #34d399;
+	--chart-1: #d4a574;
+	--chart-2: #38bdf8;
+	--chart-3: #e07a5f;
+	--chart-4: #2dd4bf;
+	--chart-5: #eab308;
+	--chart-6: #a78bfa;
+	--chart-7: #94a3b8;
+	/* audit 7.5 P2-7: čiarkovaná mriežka potrebuje o niečo viac kontrastu */
+	--chart-grid: rgba(255, 255, 255, 0.1);
+	--chart-axis: rgba(255, 255, 255, 0.32);
+	--chart-label: rgba(245, 245, 244, 0.6);
+	--diagram-bg: #0d1a14;
+	--diagram-fg: #f5f5f4;
+	--diagram-line: rgba(52, 211, 153, 0.55);
+	--diagram-accent: #d4a574;
+	--diagram-note: rgba(234, 179, 8, 0.16);
+	--diagram-primary: rgba(52, 211, 153, 0.16);
+	--diagram-secondary: rgba(212, 165, 116, 0.16);
+	--prose-link: #34d399;
+	--code-bg: rgba(3, 8, 6, 0.6);
+	--code-fg: #d9f5e6;
+	--code-border: rgba(255, 255, 255, 0.1);
+	--math-fg: #f5f5f4;
+
+	/* --- audit 7.5: sklenený rám bohatého obsahu (P1-1) ----------------- */
+	--figure-bg: linear-gradient(160deg, rgba(52, 211, 153, 0.06) 0%, transparent 55%), rgba(255, 255, 255, 0.035);
+	--figure-border: var(--glass-border);
+	--figure-radius: var(--radius-md);
+	--figure-shadow: var(--shadow-inset-hairline);
+
+	/* --- audit 7.5 P1-3: gradientové tyče grafov ------------------------- */
+	--chart-0-end: #059669;
+	--chart-1-end: #a8763e;
+	--chart-2-end: #0369a1;
+	--chart-3-end: #b8543b;
+	--chart-4-end: #0d9488;
+	--chart-5-end: #b45309;
+	--chart-6-end: #6d28d9;
+	--chart-7-end: #64748b;
+	--chart-bar-radius: 6px;
+	--chart-bar-glow: drop-shadow(0 0 10px rgba(52, 211, 153, 0.25));
+
+	/* --- audit 7.5 P1-4: uzly diagramov ---------------------------------- */
+	--diagram-node-radius: 10px;
+	--diagram-node-glow: drop-shadow(0 0 6px rgba(52, 211, 153, 0.18));
+
+	/* --- audit 7.5 P1-7 / P2-5: tagline a citácie ------------------------ */
+	--tagline-fg: color-mix(in srgb, var(--secondary) 62%, var(--text-muted));
+	--cite-fg: var(--secondary-strong);
+}
+
+/* ==========================================================================
+   glass-light — svetlá varianta tej istej identity (tm-607 light)
+   `[data-theme='light']` je alias z Phase 1 (test tokens.test.ts si ho
+   vyžaduje) a zároveň záchrana pre staré uložené voľby.
+   ========================================================================== */
+[data-theme='light'],
+[data-theme='glass-light'] {
+	/* --- pozadie: šalviový papier, o dve vrstvy tmavší než biela ------
+       Na takmer bielej by bola biela sklenená karta neviditeľná —
+       blur aj tiene potrebujú za kartou niečo, čo nie je biela. */
+	--dark-1: #e2e8db;
+	--dark-2: #ffffff;
+	--dark-3: #d5ddcb;
+	--bg-0: #cfd8c6;
+	--bg-grad-1: #d5e7d8;
+	--bg-grad-2: #e6eed9;
+	--bg-grad-3: #f4efdd;
+
+	/* --- mlhy a orb-y: stlmené (na svetlom by bol neon smiešny) ------- */
+	--bg-mist-1: rgba(5, 150, 105, 0.3);
+	--bg-mist-2: rgba(212, 165, 116, 0.34);
+	--bg-mist-3: rgba(224, 122, 95, 0.2);
+	--bg-mist-opacity: 0.56;
+	--orb-opacity: 0.34;
+	--grid-opacity: 0;
+	--grid-line: rgba(20, 40, 30, 0.05);
+
+	/* --- sklo: biele plotýnky s priehľadnosťou ------------------------ */
+	--glass-bg: rgba(255, 255, 255, 0.72);
+	--glass-border: rgba(20, 45, 32, 0.16);
+	--glass-bg-hover: rgba(255, 255, 255, 0.9);
+	--glass-bg-accent: rgba(5, 150, 105, 0.1);
+	--glass-strong: rgba(255, 255, 255, 0.85);
+	--glass-highlight: rgba(255, 255, 255, 0.8);
+	--glass-hairline: rgba(255, 255, 255, 0.95);
+	--surface-1: rgba(255, 255, 255, 0.62);
+	--surface-2: rgba(255, 255, 255, 0.82);
+	--surface-3: rgba(255, 255, 255, 0.97);
+	--surface-sunken: rgba(20, 45, 32, 0.06);
+	--surface-accent: rgba(164, 118, 58, 0.12);
+
+	/* --- text --------------------------------------------------------- */
+	--text-1: #14201a;
+	--text-2: rgba(20, 32, 26, 0.8);
+	/* audit 7.5 P2-11: 11px šedá na šalvii mala ~3:1 — muted aj dim idú
+	   na AA-hodnoty (dim .6, muted .7) */
+	--text-muted: rgba(20, 32, 26, 0.7);
+	--text-dim: rgba(20, 32, 26, 0.6);
+	--text-inverse: #f7fbf8;
+
+	/* audit 7.5 P1-5: Outfit namiesto Syne aj pre nadpisy (tm-607) */
+	--font-display: 'Outfit', 'Outfit Variable', sans-serif;
+
+	/* --- akcenty: tmavší emerald + bronzové gold (AA na bielej) ------- */
+	--primary: #047857;
+	--primary-strong: #065f46;
+	--primary-deep: #03543f;
+	--secondary: #8a6d3b;
+	--secondary-strong: #6f5522;
+	--secondary-deep: #a4763a;
+	--accent: #c2603f;
+	--accent-strong: #a44b2c;
+	--accent-deep: #8b3d21;
+	--emerald: #059669;
+	--emerald-bright: #10b981;
+	--emerald-deep: #047857;
+	--gold: #a4763a;
+	--gold-bright: #c8a45c;
+	--gold-deep: #6f5522;
+	--on-accent: #ffffff;
+	--accent-fill-1: #10b981;
+	--accent-fill-2: #047857;
+	--accent-fill-3: #c8a45c;
+	--brand-gradient: linear-gradient(115deg, #047857 0%, #0f8f6b 34%, #a4763a 72%, #8a6d3b 100%);
+	--logo-glow: drop-shadow(0 0 14px rgba(5, 150, 105, 0.35));
+
+	/* --- sémantické stavy (kontrast na bielej) ------------------------ */
+	--ok: #15803d;
+	--info: #0369a1;
+	--warn: #b45309;
+	--error: #b91c1c;
+	--ok-glow: rgba(21, 128, 61, 0.22);
+	--info-glow: rgba(3, 105, 161, 0.2);
+	--warn-glow: rgba(180, 83, 9, 0.2);
+	--error-glow: rgba(185, 28, 28, 0.2);
+	--ok-soft: rgba(21, 128, 61, 0.1);
+	--info-soft: rgba(3, 105, 161, 0.1);
+	--warn-soft: rgba(180, 83, 9, 0.1);
+	--error-soft: rgba(185, 28, 28, 0.1);
+
+	/* --- glow a tiene: na svetlej sú tiene dôležitejšie než glow ------ */
+	--glow-cyan: rgba(5, 150, 105, 0.25);
+	--glow-magenta: rgba(164, 118, 58, 0.22);
+	--glow-accent: rgba(194, 96, 63, 0.2);
+	--glow-primary: rgba(5, 150, 105, 0.22);
+	--glow-secondary: rgba(164, 118, 58, 0.2);
+	--shadow-1: 0 1px 2px rgba(20, 45, 32, 0.1);
+	--shadow-2: 0 4px 16px -4px rgba(20, 45, 32, 0.18);
+	--shadow-3: 0 12px 30px -10px rgba(20, 45, 32, 0.22);
+	--shadow-4: 0 20px 40px -14px rgba(20, 45, 32, 0.24);
+	--shadow-5: 0 30px 60px -16px rgba(20, 45, 32, 0.28);
+	--shadow-card: 0 20px 40px rgba(20, 45, 32, 0.12);
+	--shadow-card-strong: 0 24px 48px rgba(20, 45, 32, 0.16);
+	--shadow-glow: 0 0 20px rgba(5, 150, 105, 0.16);
+	--shadow-hover: 0 18px 34px -16px rgba(20, 45, 32, 0.28), 0 0 20px rgba(5, 150, 105, 0.1);
+	--shadow-inset-hairline: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	--focus-ring: #047857;
+	--focus-ring-shadow: 0 0 0 2px rgba(5, 150, 105, 0.35), 0 0 14px rgba(5, 150, 105, 0.18);
+
+	/* --- chrome ------------------------------------------------------- */
+	--scrollbar-thumb: linear-gradient(180deg, rgba(5, 150, 105, 0.5), rgba(164, 118, 58, 0.55));
+	--scrollbar-track: rgba(20, 45, 32, 0.06);
+	--selection-bg: rgba(5, 150, 105, 0.2);
+	--selection-fg: #14201a;
+	--color-scheme: light;
+
+	/* --- Phase 3b: grafy / diagramy / prose --------------------------- */
+	--chart-0: #047857;
+	--chart-1: #a4763a;
+	--chart-2: #0369a1;
+	--chart-3: #c2603f;
+	--chart-4: #0d9488;
+	--chart-5: #b45309;
+	--chart-6: #6d28d9;
+	--chart-7: #64748b;
+	/* audit 7.5 P2-7: ~.14 na svetlom (čiarkovaná mriežka) */
+	--chart-grid: rgba(20, 45, 32, 0.14);
+	--chart-axis: rgba(20, 45, 32, 0.4);
+	--chart-label: rgba(20, 32, 26, 0.66);
+	--diagram-bg: #ffffff;
+	--diagram-fg: #14201a;
+	/* audit 7.5 P1-4: uzly sú biele sklenené plotýnky (sage primary bola
+	   blato), hrany a spojnice idú do tmavého emeraldu */
+	--diagram-line: rgba(4, 120, 87, 0.7);
+	--diagram-accent: #a4763a;
+	--diagram-note: rgba(180, 83, 9, 0.12);
+	--diagram-primary: rgba(255, 255, 255, 0.92);
+	--diagram-secondary: rgba(164, 118, 58, 0.14);
+	--prose-link: #047857;
+	--code-bg: rgba(20, 45, 32, 0.05);
+	--code-fg: #123527;
+	--code-border: rgba(20, 45, 32, 0.12);
+	--math-fg: #14201a;
+
+	/* --- audit 7.5: sklenený rám bohatého obsahu (P1-1) -----------------
+       Na svetlej bol --surface-sunken šedofarbový kliniec v bielej karte
+       — figure teraz dostáva biely sklenený povrch, nie stmavený. */
+	--figure-bg: rgba(255, 255, 255, 0.55);
+	--figure-border: var(--glass-border);
+	--figure-radius: var(--radius-md);
+	--figure-shadow: var(--shadow-inset-hairline);
+
+	/* --- audit 7.5 P1-3: gradientové tyče (na svetlej bez glow) --------- */
+	--chart-0-end: #10b981;
+	--chart-1-end: #6f5522;
+	--chart-2-end: #075985;
+	--chart-3-end: #8b3d21;
+	--chart-4-end: #047857;
+	--chart-5-end: #92400e;
+	--chart-6-end: #4c1d95;
+	--chart-7-end: #475569;
+	--chart-bar-radius: 6px;
+	--chart-bar-glow: none;
+
+	/* --- audit 7.5 P1-4: uzly diagramov (na svetlej bez glow) ----------- */
+	--diagram-node-radius: 10px;
+	--diagram-node-glow: none;
+
+	/* --- audit 7.5 P1-7 / P2-5: tagline a citácie ------------------------ */
+	--tagline-fg: color-mix(in srgb, var(--secondary) 62%, var(--text-muted));
+	--cite-fg: var(--secondary);
+}
+
+/* ==========================================================================
+   Tlač — light tokens, nech A4 nie je čierny papier (design doc Q4)
+   ========================================================================== */
+@media print {
+
+	:root,
+	[data-theme='glass-dark'],
+	[data-theme='nexaverse'] {
+		--dark-1: #ffffff;
+		--dark-2: #ffffff;
+		--dark-3: #f0f0ea;
+		--bg-0: #ffffff;
+		--bg-grad-1: #ffffff;
+		--bg-grad-2: #ffffff;
+		--bg-grad-3: #ffffff;
+		--glass-bg: #ffffff;
+		--glass-bg-hover: #ffffff;
+		--glass-bg-accent: #f2f2ec;
+		--glass-border: rgba(0, 0, 0, 0.24);
+		--glass-strong: #ffffff;
+		--glass-highlight: #ffffff;
+		--glass-hairline: rgba(0, 0, 0, 0.2);
+		--surface-1: #ffffff;
+		--surface-2: #f7f7f2;
+		--surface-3: #ffffff;
+		--surface-sunken: #f4f4ee;
+		--surface-accent: #f7f1e6;
+		--text-1: #14201a;
+		--text-2: rgba(20, 32, 26, 0.82);
+		--text-muted: rgba(20, 32, 26, 0.66);
+		--text-dim: rgba(20, 32, 26, 0.5);
+		--primary: #046b4f;
+		--secondary: #7a5f33;
+		--accent: #a44b2c;
+		--ok: #15803d;
+		--info: #075985;
+		--warn: #92400e;
+		--error: #991b1b;
+		--shadow-card: none;
+		--shadow-card-strong: none;
+		--shadow-hover: none;
+		--color-scheme: light;
+		--code-bg: #f4f4ee;
+		--code-fg: #14201a;
+
+		/* audit 7.5: bohatý obsah sa na papieri tvári ako papier, nie ako
+		   sklo — žiadne glow, figure biela, gradient tyčí splýva do
+		   plochej farby série (--chart-N-end = --chart-N) */
+		--figure-bg: #ffffff;
+		--figure-border: rgba(0, 0, 0, 0.24);
+		--figure-radius: 12px;
+		--figure-shadow: none;
+		--chart-0-end: var(--chart-0);
+		--chart-1-end: var(--chart-1);
+		--chart-2-end: var(--chart-2);
+		--chart-3-end: var(--chart-3);
+		--chart-4-end: var(--chart-4);
+		--chart-5-end: var(--chart-5);
+		--chart-6-end: var(--chart-6);
+		--chart-7-end: var(--chart-7);
+		--chart-bar-radius: 6px;
+		--chart-bar-glow: none;
+		--diagram-node-radius: 10px;
+		--diagram-node-glow: none;
+		--tagline-fg: rgba(20, 32, 26, 0.62);
+		--cite-fg: #046b4f;
+	}
+}
+
+/* ===== Glassmorphism triedy (šablóna tm-603, rozšírené o vrstvy) ===== */
+
+/* .glass-card — karta z šablóny: blur 20px, hairline vrch, hover zdvih.
+   Test `tokens.test.ts` viaže `backdrop-filter: blur(var(--blur-glass))`
+   a `border: 1px solid var(--glass-border)` na tento blok — nesmú zmiznúť. */
+.glass-card {
+	background: var(--glass-bg);
+	backdrop-filter: blur(var(--blur-glass)) saturate(var(--saturate-glass));
+	-webkit-backdrop-filter: blur(var(--blur-glass)) saturate(var(--saturate-glass));
+	border: 1px solid var(--glass-border);
+	border-radius: var(--radius-card);
+	padding: 30px;
+	position: relative;
+	overflow: hidden;
+	box-shadow: var(--shadow-2), var(--shadow-inset-hairline);
+	transition:
+		transform var(--dur-med) var(--ease-soft),
+		background var(--dur-med) ease,
+		border-color var(--dur-med) ease,
+		box-shadow var(--dur-med) var(--ease-soft);
+}
+
+.glass-card::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, var(--glass-hairline), transparent);
+	pointer-events: none;
+}
+
+/* druhá vrstva skla: gradientový rám (mask-composite vyreže 1px hranu) */
+.glass-card::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	padding: 1px;
+	background: linear-gradient(135deg,
+			var(--glass-hairline) 0%,
+			transparent 32%,
+			transparent 68%,
+			var(--glow-secondary) 100%);
+	-webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+	mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+	opacity: 0.55;
+	pointer-events: none;
+	transition: opacity var(--dur-med) ease;
+}
+
+.glass-card:hover {
+	background: var(--glass-bg-hover);
+	transform: translateY(-3px);
+	box-shadow: var(--shadow-hover), var(--shadow-inset-hairline);
+}
+
+.glass-card:hover::after {
+	opacity: 1;
+}
+
+/* .glass-tile — dlaždica `.menu-item` z šablóny (väčší radius, glow border) */
+.glass-tile {
+	background: var(--glass-bg);
+	backdrop-filter: blur(var(--blur-glass)) saturate(var(--saturate-glass));
+	-webkit-backdrop-filter: blur(var(--blur-glass)) saturate(var(--saturate-glass));
+	border: 1px solid var(--glass-border);
+	border-radius: var(--radius-tile);
+	position: relative;
+	overflow: hidden;
+	box-shadow: var(--shadow-2), var(--shadow-inset-hairline);
+	transition: all 0.5s var(--ease-pop);
+}
+
+.glass-tile::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 50%;
+	background: linear-gradient(180deg,
+			var(--glass-highlight) 0%,
+			rgba(255, 255, 255, 0.05) 40%,
+			transparent 100%);
+	border-radius: var(--radius-tile) var(--radius-tile) 0 0;
+	pointer-events: none;
+}
+
+.glass-tile:hover {
+	transform: translateY(-6px) scale(1.015);
+	background: var(--glass-bg-accent);
+	border-color: var(--primary);
+	box-shadow:
+		var(--shadow-card-strong),
+		var(--shadow-glow);
+}
+
+/* .glass-panel — zjednodušená karta bez hover zdvihu (navigácia, panely) */
+.glass-panel {
+	background: var(--glass-bg);
+	backdrop-filter: blur(var(--blur-glass)) saturate(var(--saturate-glass));
+	-webkit-backdrop-filter: blur(var(--blur-glass)) saturate(var(--saturate-glass));
+	border: 1px solid var(--glass-border);
+	border-radius: var(--radius-card);
+	box-shadow: var(--shadow-2), var(--shadow-inset-hairline);
+}
+
+/* .brand-gradient — gradientový text loga/brandu (.brand-name v šablóne) */
+.brand-gradient {
+	font-family: var(--font-display);
+	font-weight: 600;
+	letter-spacing: 6px;
+	background: var(--brand-gradient);
+	background-size: 160% 160%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+	text-transform: uppercase;
+	transition: background-position var(--dur-slow) var(--ease-soft);
+}
+
+.brand:hover .brand-gradient {
+	background-position: 100% 50%;
+}
+
+/* .glow-ring — prstenček okolo badge/avatara (.menu-badge v šablóne) */
+.glow-ring {
+	border: 1px solid var(--primary);
+	box-shadow: 0 0 20px var(--glow-cyan);
+}
+
+/* ===== Ambient pozadie (.ambient-bg + .orb + .grid-overlay v šablóne) =====
+   Bez orb-ov a mlh by `backdrop-filter` nebol vidieť — sklo potrebuje
+   čo najváľať. Preto sú tieto vrstvy povinné (renderuje ich `App.tsx`). */
+.ambient-bg {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+	z-index: 0;
+	overflow: hidden;
+}
+
+/* farebné mlhy priamo vo vrstve pod sklom */
+.ambient-bg::before {
+	content: '';
+	position: absolute;
+	inset: -10%;
+	background:
+		radial-gradient(ellipse 80% 55% at 18% 34%, var(--bg-mist-1) 0%, transparent 55%),
+		radial-gradient(ellipse 62% 44% at 82% 62%, var(--bg-mist-2) 0%, transparent 55%),
+		radial-gradient(ellipse 54% 34% at 48% 88%, var(--bg-mist-3) 0%, transparent 55%);
+	opacity: var(--bg-mist-opacity);
+	transition: opacity var(--dur-slow) var(--ease-soft);
+}
+
+.orb {
+	position: absolute;
+	border-radius: 50%;
+	filter: blur(80px);
+	opacity: var(--orb-opacity);
+	animation: forum-float 20s ease-in-out infinite;
+	transition: opacity var(--dur-slow) var(--ease-soft);
+}
+
+.orb-1 {
+	width: 620px;
+	height: 620px;
+	background: radial-gradient(circle, var(--bg-mist-1) 0%, transparent 70%);
+	top: -200px;
+	left: -200px;
+}
+
+.orb-2 {
+	width: 520px;
+	height: 520px;
+	background: radial-gradient(circle, var(--bg-mist-2) 0%, transparent 70%);
+	bottom: -150px;
+	right: -150px;
+	animation-delay: -7s;
+}
+
+.orb-3 {
+	width: 420px;
+	height: 420px;
+	background: radial-gradient(circle, var(--bg-mist-3) 0%, transparent 70%);
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	animation-delay: -14s;
+}
+
+/* mriežka len pre nexaverse (--grid-opacity: 1); glass témy ju majú 0 */
+.grid-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-image:
+		linear-gradient(var(--grid-line) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+	background-size: 80px 80px;
+	opacity: var(--grid-opacity);
+	mask-image: radial-gradient(ellipse 90% 70% at 50% 40%, #000 20%, transparent 100%);
+	-webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 40%, #000 20%, transparent 100%);
+	pointer-events: none;
+	z-index: 1;
+	transition: opacity var(--dur-slow) var(--ease-soft);
+}
+
+@keyframes forum-float {
+
+	0%,
+	100% {
+		transform: translate(0, 0) scale(1);
+	}
+
+	25% {
+		transform: translate(50px, -30px) scale(1.05);
+	}
+
+	50% {
+		transform: translate(-30px, 50px) scale(0.95);
+	}
+
+	75% {
+		transform: translate(-50px, -20px) scale(1.02);
+	}
+}

@@ -1,0 +1,64 @@
+{
+ "_meta": {
+  "source": "http://127.0.0.1:18081",
+  "fetched_at": "2026-10-29 10:35 UTC",
+  "task": "F4AI-18 (S12)"
+ },
+ "phase": "S8",
+ "topic_count": 115,
+ "topics": [
+  {
+   "slug": "f4ai11-koren-1793207213390",
+   "address": "30020:fa0f34158b6acb12be303563f390e7b44bd77f11c182d928751e4e92c6df6b90:f4ai11-koren-1793207213390",
+   "pubkey": "fa0f34158b6acb12be303563f390e7b44bd77f11c182d928751e4e92c6df6b90",
+   "event_id": "cc463090898119eec9f45f4ddc943db0c3bcee31a898f2c08c07e0666ba24f8d",
+   "created_at": 1793207214,
+   "content": "korenovy topic",
+   "parent": null,
+   "children": []
+  },
+  {
+   "slug": "dbg-koren",
+   "address": "30020:7726b4c1c27df430d6f1f4a227dcb9f57cfea70cbd0ab1b90b27dbd9e6b2e2d1:dbg-koren",
+   "pubkey": "7726b4c1c27df430d6f1f4a227dcb9f57cfea70cbd0ab1b90b27dbd9e6b2e2d1",
+   "event_id": "b248f6f97345b8713bc7d86d81f6890284cc8f32c1b30ccf78f33f5675a6a8ac",
+   "created_at": 1793207389,
+   "content": "koren",
+   "parent": null,
+   "children": [
+    {
+     "slug": "dbg-pod",
+     "address": "30020:7726b4c1c27df430d6f1f4a227dcb9f57cfea70cbd0ab1b90b27dbd9e6b2e2d1:dbg-pod",
+     "pubkey": "7726b4c1c27df430d6f1f4a227dcb9f57cfea70cbd0ab1b90b27dbd9e6b2e2d1",
+     "event_id": "28d4bb1482353967197d3ac60982ded9c576bbafc4c8268b54883167964ef17f",
+     "created_at": 1793207390,
+     "content": "pod",
+     "parent": "30020:7726b4c1c27df430d6f1f4a227dcb9f57cfea70cbd0ab1b90b27dbd9e6b2e2d1:dbg-koren",
+     "children": []
+    }
+   ]
+  },
+  {
+   "slug": "f4ai11-koren-1793208437023",
+   "address": "30020:43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c:f4ai11-koren-1793208437023",
+   "pubkey": "43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c",
+   "event_id": "a3d33b33286479b3397ef0443f2b6e5d77092fc005852f3cbb186a51da7d03b4",
+   "created_at": 1793208438,
+   "content": "korenovy topic",
+   "parent": null,
+   "children": [
+    {
+     "slug": "f4ai11-podtopic-1793208437023",
+     "address": "30020:43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c:f4ai11-podtopic-1793208437023",
+     "pubkey": "43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c",
+     "event_id": "48b2729960f7ed421823d2e3760f5142b52861fe3e7a0817e8716311a3a44969",
+     "created_at": 1793208439,
+     "content": "podtopic",
+     "parent": "30020:43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c:f4ai11-koren-1793208437023",
+     "children": []
+    }
+   ]
+  }
+ ],
+ "issues": []
+}

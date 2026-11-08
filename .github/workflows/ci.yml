@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# One job, the same commands the development machine runs:
+#   pnpm lint && pnpm -r build && pnpm -r test
+#
+# Notes:
+#   * `pnpm lint` is the root script (`eslint .` over the whole workspace) — the
+#     packages themselves have no `lint` script, so `pnpm -r lint` would be a no-op.
+#   * Tests run SEQUENTIALLY (`pnpm -r test`, never `--parallel`). The suites are
+#     network- and CPU-sensitive; parallel workers make the live-relay timings flaky.
+#   * The live integration suites (gateway/indexer/relay) probe a local relay pair
+#     at 127.0.0.1:18080 / :18008 and skip themselves when it is not reachable, so
+#     CI runs the deterministic unit + in-process integration tests only. Point them
+#     at a reachable relay pair with F4AI_DEV_RELAY_URLS to run them for real.
+#   * Playwright E2E (packages/e2e) is NOT part of this workflow: it needs a
+#     downloaded browser and a live stack (relays + gateway + indexer + built UI),
+#     which CI does not have. It runs on the deployment machine with
+#     `pnpm test:e2e` — see packages/e2e/README.md.
+jobs:
+  ci:
+    name: lint + build + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm version comes from the "packageManager" field of package.json (pnpm@12.15.0).
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm -r build
+
+      - name: Test (sequential)
+        run: pnpm -r test

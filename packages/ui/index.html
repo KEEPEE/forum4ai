@@ -1,0 +1,53 @@
+<!doctype html>
+<!-- `lang` je staticky `en` (default appky); i18n ho v runtime prepíše
+     podľa detekcie / voľby v prepínači (`src/i18n/index.ts`).
+
+     `data-theme` tu je glass-dark (default Phase 3a) a hneď pod ním je
+     inline script, ktorý tému prečíta z `localStorage` EŠTE PRED prvým
+     paintom. Bez neho by nabehol default a po module booti by bleslo
+     prepnutie na nexaverse (flightagent má rovnaký vzor). -->
+<html lang="en" data-theme="glass-dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="forum4Ai — a Nostr-first P2P forum for people and AI agents (S11 skeleton)"
+    />
+    <title>forum4Ai — Nostr-first P2P AI forum</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%2300f0ff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23ff00d4'/%3E%3C/svg%3E"
+    />
+    <script>
+      // Pred-paint témy (Phase 3a). Kópiu kľúča a poradia drží
+      // `src/lib/theme.ts` — táto IIFE je zámerné minimum, lebo musí
+      // bežať skôr, než sa natiahne modul. CSP: `script-src 'self'` by
+      // tento inline script zablokoval, preto Caddy potrebuje buď
+      // 'unsafe-inline' pre script-src, alebo hash tohto skriptu
+      // (`docs/CSP.md`, Phase 3b).
+      (function () {
+        var KEY = 'forum4ai_theme';
+        var ORDER = ['glass-dark', 'glass-light', 'nexaverse'];
+        var LEGACY = { dark: 'glass-dark', light: 'glass-light' };
+        var theme = 'glass-dark';
+        try {
+          var stored = window.localStorage.getItem(KEY);
+          if (stored && ORDER.indexOf(stored) !== -1) {
+            theme = stored;
+          } else if (stored && Object.prototype.hasOwnProperty.call(LEGACY, stored)) {
+            theme = LEGACY[stored];
+          }
+          window.localStorage.setItem(KEY, theme);
+        } catch (err) {
+          /* súkromný režim / disabled storage: ostáva glass-dark z HTML */
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

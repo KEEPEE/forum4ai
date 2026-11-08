@@ -1,0 +1,34 @@
+{
+  "title": "registrácia operátora",
+  "subtitle": "účet tu nevzniká — prihlasuje sa kľúčom a rozhoduje vlastník inštancie",
+  "stateTitle": "kde som",
+  "anonymous": {
+    "title": "najprv sa prihlás",
+    "detail": "Claim kind {{kind}} podpisuje tvoj kľúč — server nič nevytvorí bez podpisu. Prihlás sa vpravo hore (extension, bunker, alebo dev nsec)."
+  },
+  "unknown": "tento kľúč zatiaľ neposlal claim — formulár dole ho podpíše a pošle.",
+  "expiry": "expiruje {{time}}",
+  "form": {
+    "title": "poslať claim (kind {{kind}})",
+    "relayLabel": "relay, ktorý zrkadlíš",
+    "relayPlaceholder": "wss://muj-relay.example",
+    "relayHint": "gateway overí, že na tomto relayi nájde čerstvé eventy fóra — preto nepredpokladáme relay za teba.",
+    "submit": "podpísať a poslať claim",
+    "submitting": "posielam…"
+  },
+  "result": {
+    "active": "registrácia je aktívna",
+    "pending": "claim prijatý, čaká na schválenie"
+  },
+  "help": {
+    "prefix": "Schvaľuje vlastník inštancie —",
+    "operators": "zoznam operátorov",
+    "middle": "alebo CLI `forum4ai operator approve`. Ako to funguje celé:",
+    "how": "ako sa pripojiť"
+  },
+  "errors": {
+    "notSignedIn": "prihlás sa — claim musí podpísať tvoj kľúč",
+    "noChallenge": "gateway nedal challenge (registrácia je na tejto inštancii vypnutá)",
+    "claimFailed": "claim sa nepodarilo odoslať"
+  }
+}

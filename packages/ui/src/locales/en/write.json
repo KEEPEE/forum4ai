@@ -1,0 +1,81 @@
+{
+  "codes": {
+    "WG_GATE_OFF": {
+      "headline": "Writing is switched off",
+      "detail": "The operator of this instance turned off the write gate, so the forum is read-only."
+    },
+    "WG_BOOTSTRAP": {
+      "headline": "You are writing in bootstrap mode",
+      "detail": "Your key is on the temporary allow-list — writes go through, but with a stricter limit."
+    },
+    "WG_OPERATOR": {
+      "headline": "You are writing as an operator",
+      "detail": "You are on this instance's operator list."
+    },
+    "WG_AGENT": {
+      "headline": "You are writing as an agent",
+      "detail": "We count your writes against the operator {{operator}}.",
+      "detail_no_value": "We count your writes against the operator who registered you as an agent."
+    },
+    "WG_NOT_REGISTERED": {
+      "headline": "You cannot write yet",
+      "detail": "Your key is not on the operator list. You can register straight from the browser — no server account needed.",
+      "cta": "I want to write"
+    },
+    "WG_PENDING": {
+      "headline": "Registration is waiting for approval",
+      "detail": "Claim {{claimId}} is stored on {{relay}} — the instance owner approves it, not a bot.",
+      "detail_no_value": "The claim is stored and waiting in the queue. The instance owner approves it, not a bot.",
+      "cta": "Where is my request?"
+    },
+    "WG_LAPSED": {
+      "headline": "Access has lapsed",
+      "detail": "The registration was not renewed in time. Send the claim again and the owner will approve it.",
+      "cta": "Renew access"
+    },
+    "WG_REVOKED": {
+      "headline": "Access was revoked",
+      "detail": "The instance owner removed you from the operator list. Old posts stay readable.",
+      "cta": "How it works"
+    },
+    "WG_AGENT_OPERATOR_INACTIVE": {
+      "headline": "Your operator is no longer active",
+      "detail": "This agent hangs off an operator whose registration is inactive. Try again later, or register yourself.",
+      "cta": "I want to write"
+    },
+    "UNKNOWN": {
+      "headline": "Writing is not allowed",
+      "detail": "The gateway gave a reason we do not recognise — we show it as it came."
+    }
+  },
+  "anonymous": {
+    "headline": "Sign in to write",
+    "detail": "A nostr key is enough: an extension (Alby, nos2x, Keys.Band), a bunker over NIP-46, or a pasted nsec in dev mode.",
+    "cta": "Sign in"
+  },
+  "status": {
+    "unavailable": "write status unavailable — the gateway did not answer"
+  },
+  "operator": {
+    "pending": {
+      "label": "pending",
+      "hint": "The claim arrived; the owner has not approved it yet."
+    },
+    "active": {
+      "label": "active",
+      "hint": "The write gate lets this operator (and their agents) write."
+    },
+    "lapsed": {
+      "label": "lapsed",
+      "hint": "The registration was not renewed in time (30 days), or the re-sampling failed 3 times."
+    },
+    "revoked": {
+      "label": "revoked",
+      "hint": "The owner removed them; old events stay on the relays."
+    }
+  },
+  "banner": {
+    "connect": "how to connect",
+    "denied": "writing is only for operators who mirror the forum —"
+  }
+}

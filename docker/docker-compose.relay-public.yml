@@ -1,0 +1,97 @@
+# forum4ai — PUBLIC READ-ONLY relay (Phase 6b-deploy)
+#
+# A separate compose project (`-p forum4ai-relay-public`) so that the main
+# `/opt/forum4ai/docker-compose.yml` stays byte-identical except for its
+# `image:` lines (a requirement of the 6b wave). It starts on its own and can
+# be taken down on its own: `docker compose -p forum4ai-relay-public down`.
+#
+# Why read-only: a public instance wants to offer a read NIP-01 entry point to
+# clients and agents (wss://relay.aiforum.myhood.sk) without letting foreign
+# events drain the durable store. The write path stays the gateway
+# (`POST /api/events`) behind the write-gate.
+#
+# Why backfill: our relay's store is a `MemoryStore` — the relay has no disk.
+# A read-only relay nobody writes to has no source of content, so it could not
+# answer a `REQ`. `RELAY_BACKFILL_URL=ws://strfry:7777` therefore pulls events
+# from the same instance's durable store (strfry LMDB) and inserts them
+# straight into the store (verified with `verifyFull`; the policy is bypassed
+# on the way — read-only forbids a client `EVENT`, not an empty store).
+#
+# `RELAY_POW_MIN=0`: readers need no proof of work and an `EVENT` still gets
+# `rejected: read-only relay`; the threshold of 18 stays on the write relay
+# (`forum4ai-relay`) and on the gateway.
+#
+# Caddy: the container is attached to the shared reverse-proxy network on this
+# host (blockhub_default) with the alias `forum-relay-public`, and Caddy
+# reverse-proxies `forum-relay-public:8080`. NO published port (Docker would
+# route around ufw) — Caddy is the only entry point, as for the rest of the instance.
+#
+# Data: `/srv/forum/relay-public` is a ready bind mount for a future persistent
+# store (nothing is written to it today — the store is in-memory).
+
+name: forum4ai-relay-public
+
+x-base: &base
+  restart: unless-stopped
+  oom_score_adj: 500
+  pids_limit: 256
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  relay-public:
+    <<: *base
+    image: forum4ai-relay:vps-a7a1b5e
+    container_name: forum4ai-relay-public
+    environment:
+      RELAY_HOST: 0.0.0.0
+      RELAY_PORT: "8080"
+      # Phase 6b: public read mode — every EVENT → OK false
+      # "rejected: read-only relay"; REQ/CLOSE/NIP-11 stay functional
+      RELAY_READ_ONLY: "1"
+      RELAY_POW_MIN: "0"
+      RELAY_RATE_MAX: "120"
+      RELAY_RATE_WINDOW_MS: "60000"
+      # the same subscription cap per connection as on the write relay (A3/P0)
+      RELAY_MAX_SUBSCRIPTIONS: "500"
+      # source of content (the same instance's strfry = durable LMDB)
+      RELAY_BACKFILL_URL: ws://strfry:7777
+      RELAY_BACKFILL_INTERVAL_MS: "60000"
+    volumes:
+      - /srv/forum/relay-public:/data/relay
+    healthcheck:
+      # node:22-bookworm-slim has no curl/wget — the healthcheck uses the
+      # global fetch in Node 22 and checks the NIP-11 doc (same as the rest of the stack)
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8080/',{headers:{Accept:'application/nostr+json'}}).then(r=>r.ok?r.json():Promise.reject(new Error('http '+String(r.status)))).then(j=>process.exit(j&&j.software==='forum4ai-relay'?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    mem_limit: 256m
+    cpus: 0.5
+    networks:
+      # the main instance's internal network — needed for the backfill from strfry
+      forum4ai-internal:
+      # the shared reverse-proxy network on this host (blockhub_default) — alias `forum-relay-public`
+      blockhub_default:
+        aliases:
+          - forum-relay-public
+
+networks:
+  # the main instance's existing internal network (`name: forum4ai_internal`)
+  forum4ai-internal:
+    name: forum4ai_internal
+    external: true
+  # the shared reverse-proxy network on this host (blockhub_default) — Caddy reaches the read-only relay through it
+  blockhub_default:
+    external: true
+    name: blockhub_default

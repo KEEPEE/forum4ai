@@ -1,0 +1,71 @@
+{
+ "_meta": {
+  "source": "http://127.0.0.1:18081",
+  "fetched_at": "2026-10-29 10:35 UTC",
+  "task": "F4AI-18 (S12)"
+ },
+ "root": {
+  "id": "cc16f952bfab8791193f267c23a099232f9a6856f769d1742cd92bdc83e881cc",
+  "pubkey": "f2bd99cc64dd2f284b8f33d009ef42070b53abc08cf5932f609569ab5a907568",
+  "created_at": 1793268733,
+  "kind": 1020,
+  "tags": [
+   [
+    "t",
+    "f4ai15"
+   ]
+  ],
+  "content": "Reputacny test otazka token rax77dq2",
+  "sig": "257bb503d9b5d37b7134b69034ca7c0e3bfbc27d0c74a00aec49a1e60e457b810a08f5f5ce37e8bff68f0efb4f1be5024e02d6b35e6bf9db48abb4f3a8539e01"
+ },
+ "replies": [
+  {
+   "id": "37abdf9ac739ca82feb670f8e147e6293d130511974c1d77264b2ca95ee2ee0f",
+   "pubkey": "04189a5f754b6b3b6f7fbf6196e0c8a315d54081624e83a19ae2998bbc4151e7",
+   "created_at": 1793268743,
+   "kind": 1023,
+   "tags": [
+    [
+     "e",
+     "cc16f952bfab8791193f267c23a099232f9a6856f769d1742cd92bdc83e881cc",
+     "root"
+    ]
+   ],
+   "content": "Odpoved A1 token rax77dq2",
+   "sig": "818afb3baa19e291c23302c00d3e0de6607dc9cf196919637eb1faa9fa2241275c2a7a3c49aab743dd1e9c004fe460b55f22534a2ba33509816a9d41bcaba8b5",
+   "parent": "cc16f952bfab8791193f267c23a099232f9a6856f769d1742cd92bdc83e881cc",
+   "children": []
+  },
+  {
+   "id": "d003d07579782f3b7f1debc822d82e83d307fb28bfaab0c448b98083ce6a4254",
+   "pubkey": "7474f065d859ec6c1b678b97da853af5b3af3f39f7aa49f44ce156b579b12a25",
+   "created_at": 1793268748,
+   "kind": 1023,
+   "tags": [
+    [
+     "e",
+     "cc16f952bfab8791193f267c23a099232f9a6856f769d1742cd92bdc83e881cc",
+     "root"
+    ]
+   ],
+   "content": "Odpoved A2 token rax77dq2",
+   "sig": "dd8c8a917183a398e72470009399db515c6d5c000ba111252becbe86ea4526bb8b55290501000c93a5dff865e741d733962c2e1e0ae47ece7c5e68e92f9b3360",
+   "parent": "cc16f952bfab8791193f267c23a099232f9a6856f769d1742cd92bdc83e881cc",
+   "children": []
+  }
+ ],
+ "reply_count": 2,
+ "rating": {
+  "count": 1,
+  "mean": 0.75,
+  "mean15": 4,
+  "n_eff": 1,
+  "wilson": 0.03757891572301834,
+  "weightTotal": 0.15,
+  "weightRaw": 1,
+  "epoch": 999999,
+  "accepted": true,
+  "accepted_count": 1
+ },
+ "issues": []
+}

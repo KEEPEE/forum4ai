@@ -1,0 +1,1207 @@
+/*
+ * Layout shell — built exclusively on the tokens in `tokens.css`.
+ * No colour here is hard-coded; everything goes through `var(--*)`, so
+ * flipping `data-theme` switches the whole application.
+ *
+ * Phase 3a: `base.css` (imported before this file) owns the reset, the
+ * `body` background, typography, focus rings and the scrollbar, and
+ * `components.css` (imported after this file) adds the richer component
+ * versions. That is why the `body`/`a`/`button`/`code` rules are gone
+ * from here — duplicating them would let the poorer rule win.
+ */
+
+/* ===== Shell ===== */
+.app-shell {
+	display: grid;
+	grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+	grid-template-rows: auto 1fr;
+	grid-template-areas:
+		"header header"
+		"sidebar content";
+	gap: 24px;
+	max-width: var(--container-max);
+	margin: 0 auto;
+	padding: 24px 20px 60px;
+	min-height: 100vh;
+}
+
+.site-header {
+	grid-area: header;
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	flex-wrap: wrap;
+	padding: 18px 24px;
+}
+
+.site-sidebar {
+	grid-area: sidebar;
+	align-self: start;
+	position: sticky;
+	top: 24px;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	max-height: calc(100vh - 48px);
+	overflow-y: auto;
+}
+
+.site-main {
+	grid-area: content;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+
+@media (max-width: 900px) {
+	.app-shell {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas:
+			"header"
+			"sidebar"
+			"content";
+	}
+
+	.site-sidebar {
+		position: static;
+		max-height: none;
+	}
+}
+
+/* ===== Header ===== */
+.brand {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.brand-logo {
+	width: 40px;
+	height: 40px;
+	filter: var(--logo-glow);
+}
+
+.brand-name {
+	font-size: 22px;
+	letter-spacing: 4px;
+}
+
+.brand-tagline {
+	font-size: 10px;
+	letter-spacing: 3px;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.header-tools {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-left: auto;
+	flex-wrap: wrap;
+}
+
+.search-box {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 14px;
+	border-radius: var(--radius-pill);
+	background: var(--glass-bg);
+	border: 1px solid var(--glass-border);
+	min-width: 240px;
+}
+
+.search-box input {
+	background: transparent;
+	border: none;
+	outline: none;
+	color: var(--text-1);
+	font-family: inherit;
+	font-size: 14px;
+	width: 100%;
+}
+
+.search-box input::placeholder {
+	color: var(--text-dim);
+}
+
+.search-box:focus-within {
+	border-color: var(--primary);
+	box-shadow: var(--shadow-glow);
+}
+
+.theme-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 14px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-border);
+	background: var(--glass-bg);
+	font-size: 13px;
+	letter-spacing: 1px;
+	transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+	border-color: var(--primary);
+	background: var(--glass-bg-accent);
+}
+
+/* language switcher (Phase 2a) — visual sibling of the theme toggle: it
+   shares .theme-toggle and its tokens, and marks the active choice with
+   the same accent as :hover (no new style) */
+.lang-switch {
+	display: inline-flex;
+	gap: 4px;
+}
+
+.lang-switch .theme-toggle {
+	padding: 8px 10px;
+}
+
+.lang-switch .theme-toggle[aria-pressed='true'] {
+	border-color: var(--primary);
+	background: var(--glass-bg-accent);
+}
+
+.identity-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 12px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-border);
+	background: var(--glass-bg);
+	font-size: 12px;
+	color: var(--text-muted);
+	max-width: 260px;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+/* ===== Sidebar ===== */
+.side-title {
+	font-family: var(--font-display);
+	font-size: 11px;
+	letter-spacing: 3px;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	margin-bottom: 10px;
+}
+
+.side-nav {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.side-link {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 12px;
+	border-radius: 12px;
+	color: var(--text-1);
+	font-size: 14px;
+	border: 1px solid transparent;
+	transition: all 0.25s ease;
+}
+
+.side-link:hover {
+	background: var(--glass-bg-hover);
+	border-color: var(--glass-border);
+}
+
+.side-link.active {
+	background: var(--glass-bg-accent);
+	border-color: var(--primary);
+	color: var(--primary);
+	box-shadow: var(--shadow-glow);
+}
+
+.side-link .link-icon {
+	width: 18px;
+	text-align: center;
+}
+
+.topic-tree {
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	font-size: 13px;
+}
+
+.topic-tree .topic-tree {
+	margin-left: 14px;
+	padding-left: 10px;
+	border-left: 1px solid var(--glass-border);
+}
+
+.topic-link {
+	display: block;
+	padding: 5px 8px;
+	border-radius: 8px;
+	color: var(--text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.topic-link:hover {
+	color: var(--primary);
+	background: var(--glass-bg-hover);
+}
+
+/* ===== Pages ===== */
+.page-head {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.page-title {
+	font-family: var(--font-display);
+	font-size: 30px;
+	font-weight: 600;
+	letter-spacing: 2px;
+	background: var(--brand-gradient);
+	-webkit-background-clip: text;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+}
+
+.page-subtitle {
+	color: var(--text-muted);
+	font-size: 14px;
+	margin-top: 6px;
+}
+
+.breadcrumbs {
+	display: flex;
+	gap: 8px;
+	font-size: 12px;
+	color: var(--text-dim);
+	letter-spacing: 1px;
+}
+
+/* ===== Event / thread cards ===== */
+.stack {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.grid-tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 18px;
+}
+
+.event-card {
+	display: block;
+	color: inherit;
+	padding: 22px 24px;
+}
+
+.event-card h3 {
+	font-family: var(--font-display);
+	font-size: 17px;
+	font-weight: 600;
+	margin-bottom: 8px;
+	line-height: 1.4;
+}
+
+.event-body {
+	color: var(--text-muted);
+	font-size: 14px;
+	line-height: 1.6;
+	white-space: pre-wrap;
+	word-break: break-word;
+	max-height: 9.6em;
+	overflow: hidden;
+}
+
+.event-meta {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-top: 14px;
+	font-size: 12px;
+	color: var(--text-dim);
+}
+
+.kind-badge {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: var(--radius-pill);
+	font-family: var(--font-display);
+	font-size: 10px;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	border: 1px solid var(--primary);
+	color: var(--primary);
+	background: var(--glass-bg-accent);
+}
+
+.kind-badge.idea {
+	border-color: var(--secondary);
+	color: var(--secondary);
+}
+
+.kind-badge.collab {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.pubkey-chip {
+	color: var(--text-muted);
+	letter-spacing: 0.5px;
+}
+
+.pubkey-chip:hover {
+	color: var(--primary);
+}
+
+.tag-chip {
+	display: inline-block;
+	padding: 2px 8px;
+	margin-right: 6px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-border);
+	background: var(--glass-bg);
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+/* ===== Reply tree ===== */
+.reply-tree,
+.reply-node {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.reply-node {
+	padding-left: 18px;
+	border-left: 1px solid var(--glass-border);
+}
+
+/* ===== States (loading / error / empty) ===== */
+.state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+	padding: 48px 24px;
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.state .state-title {
+	font-family: var(--font-display);
+	font-size: 15px;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--text-1);
+}
+
+.state-error {
+	border-color: var(--secondary);
+}
+
+.state-error .state-title {
+	color: var(--secondary);
+}
+
+.state-detail {
+	font-size: 13px;
+	color: var(--text-dim);
+	max-width: 520px;
+	word-break: break-word;
+}
+
+.spinner {
+	width: 42px;
+	height: 42px;
+	border-radius: 50%;
+	border: 2px solid var(--glass-border);
+	border-top-color: var(--primary);
+	animation: forum-spin 0.9s linear infinite;
+}
+
+@keyframes forum-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.retry-btn {
+	padding: 8px 18px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--primary);
+	background: var(--glass-bg-accent);
+	color: var(--primary);
+	font-size: 13px;
+	letter-spacing: 1px;
+}
+
+/* ===== Composer ===== */
+.composer {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 24px;
+}
+
+.composer:hover {
+	transform: none;
+}
+
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.field label {
+	font-size: 11px;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.field input,
+.field textarea,
+.field select {
+	font-family: inherit;
+	font-size: 14px;
+	color: var(--text-1);
+	background: var(--glass-bg);
+	border: 1px solid var(--glass-border);
+	border-radius: 12px;
+	padding: 10px 12px;
+	outline: none;
+	transition: all 0.25s ease;
+}
+
+.field textarea {
+	min-height: 110px;
+	resize: vertical;
+	line-height: 1.6;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+	border-color: var(--primary);
+	box-shadow: var(--shadow-glow);
+}
+
+.composer-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.primary-btn {
+	padding: 10px 22px;
+	border-radius: var(--radius-pill);
+	background: var(--glass-bg-accent);
+	border: 1px solid var(--primary);
+	color: var(--primary);
+	font-family: var(--font-display);
+	font-size: 13px;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	transition: all 0.3s ease;
+}
+
+.primary-btn:hover:not(:disabled) {
+	box-shadow: 0 0 24px var(--glow-cyan);
+}
+
+.primary-btn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.ghost-btn {
+	padding: 8px 16px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-border);
+	color: var(--text-muted);
+	font-size: 12px;
+	letter-spacing: 1px;
+}
+
+.signed-event {
+	font-size: 12px;
+	color: var(--text-muted);
+	background: var(--dark-2);
+	border: 1px solid var(--glass-border);
+	border-radius: 12px;
+	padding: 14px;
+	overflow-x: auto;
+	max-height: 260px;
+	overflow-y: auto;
+}
+
+.signed-event summary {
+	cursor: pointer;
+	color: var(--primary);
+	letter-spacing: 1px;
+}
+
+.signed-event pre {
+	margin-top: 10px;
+	white-space: pre-wrap;
+	word-break: break-all;
+	line-height: 1.5;
+}
+
+.notice {
+	font-size: 12px;
+	color: var(--text-dim);
+	line-height: 1.6;
+}
+
+.notice.error {
+	color: var(--secondary);
+}
+
+/* ===== Write-gate banner (design B10) — read-only state ===== */
+.write-banner {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px 14px;
+	margin-bottom: 18px;
+	padding: 12px 16px;
+	border: 1px solid var(--warn);
+	border-radius: 12px;
+	background: var(--glass-bg);
+	color: var(--warn);
+	font-size: 13px;
+	line-height: 1.5;
+	box-shadow: 0 0 18px var(--warn-glow);
+}
+
+.write-banner a {
+	color: var(--warn);
+	text-decoration: underline;
+	letter-spacing: 0.5px;
+}
+
+.write-banner-reason,
+.write-banner-note {
+	color: var(--text-dim);
+	font-size: 11px;
+	letter-spacing: 0.5px;
+}
+
+.write-banner-close {
+	margin-left: auto;
+	padding: 2px 10px;
+	border: 1px solid var(--glass-border);
+	border-radius: var(--radius-pill);
+	background: transparent;
+	color: var(--text-muted);
+	font-size: 14px;
+	line-height: 1.2;
+	cursor: pointer;
+}
+
+.write-banner-close:hover {
+	color: var(--warn);
+	border-color: var(--warn);
+}
+
+/* ===== Reputation / board helpers ===== */
+.stat-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 14px;
+}
+
+.stat {
+	padding: 18px;
+	text-align: center;
+}
+
+.stat .stat-value {
+	font-family: var(--font-display);
+	font-size: 26px;
+	color: var(--primary);
+}
+
+.stat .stat-label {
+	font-size: 11px;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	margin-top: 6px;
+}
+
+.status-pill {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: var(--radius-pill);
+	font-size: 11px;
+	letter-spacing: 1px;
+	border: 1px solid var(--glass-border);
+	background: var(--glass-bg);
+	color: var(--text-muted);
+}
+
+/* status pill colours (F4AI-19, S13) — spec: open --primary, claimed
+   --secondary, in_progress --accent, review yellow (--warn), done green
+   (--ok), cancelled --muted. The status automaton lives in
+   `gateway/src/ideas.ts` (review/cancelled replaced the old sketch — the
+   `delivered/abandoned` classes are gone). */
+.status-pill.open {
+	border-color: var(--primary);
+	color: var(--primary);
+}
+
+.status-pill.claimed {
+	border-color: var(--secondary);
+	color: var(--secondary);
+}
+
+.status-pill.in_progress {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.status-pill.review {
+	border-color: var(--warn);
+	color: var(--warn);
+}
+
+.status-pill.done {
+	border-color: var(--ok);
+	color: var(--ok);
+}
+
+.status-pill.cancelled {
+	border-color: var(--text-muted);
+	color: var(--text-muted);
+}
+
+.untrusted-note {
+	font-size: 11px;
+	color: var(--text-dim);
+	letter-spacing: 0.5px;
+}
+
+/* ===== F4AI-18 (S12): live UI ===== */
+
+/* badge "untrusted" — obsah nie je moderovaný (štylisticky ako status-pill) */
+.untrusted-badge {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: var(--radius-pill);
+	font-size: 11px;
+	letter-spacing: 1px;
+	border: 1px solid var(--glass-border);
+	background: var(--glass-bg);
+	color: var(--text-dim);
+}
+
+/*
+ * F4AI-2b2: štítok jazyka obsahu (NIP-32 `L`/`l`). Vždy len dvojpísmenový
+ * kód veľkými písmenami (alebo UND = neoznačené), preto úzky pill s
+ * priehľadným rámom — musí ostať výrazne za `kind-badge`.
+ */
+.lang-badge {
+	display: inline-block;
+	padding: 3px 8px;
+	border-radius: var(--radius-pill);
+	font-family: var(--font-display);
+	font-size: 10px;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	border: 1px dashed var(--glass-border);
+	background: var(--glass-bg);
+	color: var(--text-muted);
+}
+
+/* 1031 rating badge v hlavičke vlákna (rating.count > 0) */
+.rating-badge {
+	display: inline-block;
+	margin-left: 8px;
+	padding: 3px 10px;
+	border-radius: var(--radius-pill);
+	font-size: 12px;
+	letter-spacing: 0.5px;
+	border: 1px solid var(--secondary);
+	background: var(--glass-bg);
+	color: var(--secondary);
+	vertical-align: middle;
+}
+
+.page-head-badges {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+/* rozbaľovací strom topicov v sidebarze */
+.topic-branch-row {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.topic-toggle {
+	flex: none;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--text-muted);
+	font-size: 11px;
+	line-height: 20px;
+	cursor: pointer;
+	border-radius: 6px;
+}
+
+.topic-toggle:hover {
+	color: var(--primary);
+	background: var(--glass-bg-hover);
+}
+
+.topic-toggle-spacer {
+	flex: none;
+	width: 20px;
+}
+
+.topic-branch-row .topic-link {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.topic-count {
+	flex: none;
+	font-size: 10px;
+	color: var(--text-dim);
+	padding-right: 4px;
+}
+
+/* počet nití (vlastných + descendants) — gateway posiela `thread_count`
+   a podľa neho radí korene aj deti; badge to len zrcadlí */
+.topic-thread-count {
+	color: var(--secondary);
+}
+
+/*
+ * Phase 6b (dizajn Q5): sekcia Network v sidebarze. Používa TENTO istý
+ * strom (.topic-tree/.topic-branch-row/.topic-toggle), lebo vizuálne je
+ * to ten istý predmet — zoznam koreňov 30020. Líši sa len label skupiny:
+ * domáci strom menuje topicy, cudzí menuje INŠTANCIE, preto monospace a
+ * tlmená farba (nie je to navigačná voľba rovnakej váhy).
+ */
+.network-upstream-label {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-family: var(--font-mono);
+	font-size: 11px;
+	letter-spacing: 0.4px;
+	color: var(--text-muted);
+}
+
+/* koreň cudzieho stromu je o stupeň ďalej a nedá sa rozbaľovať */
+.network-root .topic-link {
+	color: var(--text-dim);
+}
+
+.network-root-unsorted,
+.network-more-label {
+	flex: 1 1 auto;
+	min-width: 0;
+	font-size: 11px;
+	color: var(--text-dim);
+}
+
+/* ===== F4AI-19 (S13): idea_call board, detail, reputačné bary ===== */
+
+/* filter lišta boardu — status pills + topic input + author kind pills */
+.filter-bar {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin-bottom: 18px;
+}
+
+.filter-group {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.filter-label {
+	font-size: 11px;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.filter-pill {
+	display: inline-block;
+	padding: 4px 12px;
+	border-radius: var(--radius-pill);
+	font-size: 12px;
+	letter-spacing: 0.5px;
+	border: 1px solid var(--glass-border);
+	background: var(--glass-bg);
+	color: var(--text-muted);
+	cursor: pointer;
+	transition: all 0.2s var(--ease-pop);
+}
+
+.filter-pill:hover {
+	border-color: var(--primary);
+	color: var(--primary);
+}
+
+.filter-pill.active {
+	border-color: var(--primary);
+	color: var(--primary);
+	background: var(--glass-bg-accent);
+	box-shadow: var(--shadow-glow);
+}
+
+.filter-pill:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.filter-topic-form {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.filter-topic-form input {
+	padding: 5px 12px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-border);
+	background: var(--glass-bg);
+	color: var(--text-1);
+	font-family: var(--font-body);
+	font-size: 12px;
+	min-width: 160px;
+}
+
+.filter-topic-form input:focus {
+	outline: none;
+	border-color: var(--primary);
+}
+
+/* karta idey — glass-tile s excerptom a badge riadkom */
+.idea-card h3 {
+	margin: 10px 0 6px;
+	font-family: var(--font-display);
+	font-size: 17px;
+	line-height: 1.3;
+}
+
+.idea-excerpt {
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	color: var(--text-muted);
+	font-size: 13px;
+	line-height: 1.5;
+	min-height: 0;
+}
+
+/* accepted pill (1032 akceptácia) — zelená, štylisticky ako status-pill */
+.accepted-pill {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: var(--radius-pill);
+	font-size: 11px;
+	letter-spacing: 1px;
+	border: 1px solid var(--ok);
+	background: var(--glass-bg);
+	color: var(--ok);
+}
+
+/* indicator návrhov (suggestions_count) — cudzie 10030 */
+.suggest-pill {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: var(--radius-pill);
+	font-size: 11px;
+	letter-spacing: 0.5px;
+	border: 1px solid var(--glass-border);
+	background: var(--glass-bg);
+	color: var(--text-muted);
+}
+
+.claimant-chip {
+	font-size: 12px;
+	color: var(--text-muted);
+}
+
+/* timeline status_history (detail idey) — chronologicky zrzdu */
+.status-timeline {
+	list-style: none;
+	margin: 12px 0;
+	padding: 0 0 0 16px;
+	border-left: 1px solid var(--glass-border);
+}
+
+.status-timeline li {
+	position: relative;
+	padding: 8px 0 8px 14px;
+	font-size: 13px;
+	color: var(--text-muted);
+}
+
+.status-timeline li::before {
+	content: '';
+	position: absolute;
+	left: -21px;
+	top: 14px;
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: var(--primary);
+	box-shadow: var(--shadow-glow);
+}
+
+.status-timeline .timeline-note {
+	color: var(--text-dim);
+	font-style: italic;
+}
+
+/* akcie na detaile (Claim / potvrdit claim) */
+.claim-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin: 16px 0;
+}
+
+.claim-hint {
+	font-size: 12px;
+	color: var(--text-dim);
+}
+
+/* modal novej idey */
+.modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--surface-sunken);
+	backdrop-filter: blur(8px);
+}
+
+.glass-modal {
+	width: min(560px, calc(100vw - 32px));
+	max-height: calc(100vh - 64px);
+	overflow: auto;
+	padding: 26px;
+}
+
+.modal-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.modal-close {
+	border: none;
+	background: transparent;
+	color: var(--text-muted);
+	font-size: 18px;
+	cursor: pointer;
+}
+
+.modal-close:hover {
+	color: var(--primary);
+}
+
+.agent-check-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--text-muted);
+	margin: 10px 0;
+}
+
+/* reputačné progress bary (0..1) */
+.progress-track {
+	height: 8px;
+	border-radius: var(--radius-pill);
+	background: var(--glass-bg);
+	border: 1px solid var(--glass-border);
+	overflow: hidden;
+	margin-top: 10px;
+}
+
+.progress-fill {
+	height: 100%;
+	border-radius: var(--radius-pill);
+	background: linear-gradient(90deg, var(--primary), var(--secondary));
+	box-shadow: var(--shadow-glow);
+	transition: width 0.4s var(--ease-pop);
+}
+
+.agent-links {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin: 14px 0;
+}
+
+/* ===== F4AI-23/24 (Phase 1b): login relácia, panely, taby ===== */
+
+/* identita v headeri: chip + badge a pod nim account menu */
+.identity-wrap {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+}
+
+.identity-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 12px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-border);
+	background: var(--glass-bg);
+	color: var(--text-1);
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.identity-chip:hover {
+	border-color: var(--accent);
+	box-shadow: var(--glow-cyan);
+}
+
+/* odkiaľ podpisuješ — extension/bunker/dev nsec sa nesmie zamieňať */
+.identity-source {
+	padding: 2px 8px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-hairline);
+	background: var(--glass-bg-accent);
+	color: var(--text-dim);
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.identity-menu {
+	position: absolute;
+	top: calc(100% + 8px);
+	right: 0;
+	z-index: 30;
+	min-width: 220px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px;
+	border-radius: var(--radius-card);
+	border: 1px solid var(--glass-border);
+	background: var(--dark-2);
+	box-shadow: var(--shadow-card-strong);
+}
+
+.identity-menu button,
+.identity-menu a {
+	display: block;
+	padding: 8px 10px;
+	border: 0;
+	border-radius: var(--radius-tile);
+	background: transparent;
+	color: var(--text-1);
+	font-size: 13px;
+	text-align: left;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.identity-menu button:hover,
+.identity-menu a:hover {
+	background: var(--glass-bg-hover);
+}
+
+/* taby výberu pozadia v login modale */
+.composer-tabs {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin: 10px 0 14px;
+}
+
+.tab-btn {
+	padding: 6px 12px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-border);
+	background: var(--glass-bg);
+	color: var(--text-dim);
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.tab-btn:hover {
+	color: var(--text-1);
+	border-color: var(--accent);
+}
+
+.tab-btn.active {
+	color: var(--text-1);
+	border-color: var(--primary);
+	background: var(--glass-bg-accent);
+	box-shadow: var(--shadow-glow);
+}
+
+/* tóny write-gate copy (ok/info/warn/error) — rovnaký badge, iná farba */
+.kind-badge.ok {
+	border-color: var(--ok);
+	color: var(--ok);
+}
+
+.kind-badge.info {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.kind-badge.warn {
+	border-color: var(--warn);
+	color: var(--warn);
+}
+
+.kind-badge.error {
+	border-color: var(--secondary);
+	color: var(--secondary);
+}

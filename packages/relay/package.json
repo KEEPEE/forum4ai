@@ -1,0 +1,34 @@
+{
+  "name": "@forum4ai/relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "forum4ai relay — tenký NIP-01 relay (ws + nostr-tools) s L2 politikou kind schémy",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "pnpm --filter @forum4ai/shared build && vitest run",
+    "dev": "tsx watch src/cli.ts",
+    "start": "node dist/cli.js"
+  },
+  "dependencies": {
+    "@forum4ai/shared": "workspace:*",
+    "nostr-tools": "2.25.2",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "@types/ws": "8.18.2",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

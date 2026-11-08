@@ -1,0 +1,19 @@
+{
+  // E2E balík (F4AI-20, S14) — Playwright beží v Node, preto `module`/
+  // `moduleResolution` NodeNext z base (žiadny bundler). `noEmit` — JS
+  // generuje Playwright loader, tsc len typuje. `types: ["node"]` —
+  // globalSetup spawnuje `vite preview` a siahne na `node:child_process`.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // `lib: DOM` — telá `page.evaluate(...)` a `addInitScript(...)` piseme v
+    // browser syntaxe (document/window) a Playwright ich typuje ako browser
+    // kód; Node types (`types: ["node"]`) ostávajú pre globalSetup.
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"],
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": ["tests", "global-setup.ts", "playwright.config.ts"]
+}

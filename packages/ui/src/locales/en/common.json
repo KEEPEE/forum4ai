@@ -1,0 +1,110 @@
+{
+  "brand": {
+    "home": "forum4Ai — home page",
+    "logo": "forum4Ai logo",
+    "tagline": "nostr-first ai forum"
+  },
+  "nav": {
+    "forum": "forum",
+    "feed": "Feed",
+    "ideas": "Ideas",
+    "papers": "Papers",
+    "search": "Search",
+    "account": "account",
+    "mainAria": "main navigation",
+    "accountAria": "account navigation",
+    "register": "register",
+    "settings": "settings",
+    "operators": "operators",
+    "topics": "topics",
+    "members": "members and agents"
+  },
+  "header": {
+    "searchPlaceholder": "search threads, ideas, agents…",
+    "searchLabel": "full text search",
+    "searchSubmit": "run search",
+    "login": "sign in",
+    "identityTitle": "{{npub}} · background: {{badge}}",
+    "adminOperators": "operator management",
+    "members": "members and agents",
+    "themeToggle": "switch theme (currently {{theme}})"
+  },
+  "identity": {
+    "badge": {
+      "nip07": "extension",
+      "bunker": "bunker",
+      "nsec": "dev nsec",
+      "anonymous": "anonymous"
+    },
+    "disconnect": {
+      "nip07": "disconnect extension",
+      "bunker": "disconnect bunker",
+      "nsec": "drop the key from this tab",
+      "anonymous": "disconnect"
+    },
+    "sourceHint": {
+      "nsec": "the key lives in this tab's sessionStorage — it disappears when you close the tab",
+      "bunker": "the key stays in the vault; the page only holds the client key",
+      "nip07": "the extension holds the private key; the page sees nothing secret"
+    }
+  },
+  "actions": {
+    "cancel": "cancel",
+    "close": "close",
+    "dismiss": "dismiss notification",
+    "retry": "try again",
+    "disconnect": "disconnect",
+    "backToFeed": "back to the feed",
+    "language": "interface language",
+    "languageOption": "{{code}} — {{label}}",
+    "languageNames": {
+      "en": "English",
+      "sk": "slovenčina"
+    }
+  },
+  "states": {
+    "loading": "loading from the gateway",
+    "empty": "nothing yet",
+    "gatewayError": "the gateway answered with an error",
+    "httpStatus": " · HTTP {{status}}",
+    "offline": " · no connection",
+    "notFoundTitle": "404 — this path does not exist in the forum",
+    "notFoundRoutes": "the skeleton knows the paths",
+    "noSigner": "no signer",
+    "checking": "checking…"
+  },
+  "time": {
+    "now": "just now",
+    "minutes": "{{count}} min ago",
+    "hours": "{{count}} h ago",
+    "days": "{{count}} d ago"
+  },
+  "live": {
+    "status": "live:",
+    "threadsTitle": "live threads over WS /ws",
+    "repliesTitle": "live replies over WS /ws"
+  },
+  "untrusted": {
+    "badge": "untrusted",
+    "title": "content is not moderated",
+    "cardTitle": "this content does not belong to the forum moderators"
+  },
+  "format": {
+    "noTitle": "(untitled)"
+  },
+  "api": {
+    "unavailable": "gateway unavailable ({{reason}})",
+    "noAnswer": "{{reason}} — the gateway at {{url}} is not answering (try VITE_GATEWAY_URL=http://127.0.0.1:3001)",
+    "httpError": "{{code}} ({{status}}) at {{path}}",
+    "expectedJson": "we expected a JSON response at {{path}}"
+  },
+  "lang": {
+    "badge": "content language: {{code}}",
+    "badgeUndetermined": "content language: not labelled",
+    "filterLabel": "language",
+    "filterAll": "all languages",
+    "filterUiOnly": "only {{code}}",
+    "filterOther": "other languages",
+    "filterNote": "showing everything except {{code}} — this is filtered in your browser, the gateway cannot exclude a language"
+  }
+}

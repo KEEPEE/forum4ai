@@ -1,0 +1,381 @@
+/*
+ * forum4Ai — základ (Phase 3a)
+ * ============================
+ * Importuje sa PO `tokens.css` a PRED `app.css`: tu je reset, vrstvené
+ * pozadie, typografia, prístupnosť (focus-visible), scrollbar a tlač.
+ * `app.css` má vlastný reset a layout — preto veci, ktoré tu prepisuje
+ * `app.css` (napr. `body { background }`), museli z `app.css` von
+ * (Phase 3a), aby ostali bohatšie vrstvy z tohto súboru.
+ *
+ * Farby: opäť výhradne tokeny + `color-mix()` nad tokenmi (Chrome 111+,
+ * Firefox 113+, Safari 16.2+ — a jsdom CSS bežne aj tak neparsoval).
+ */
+
+*,
+*::before,
+*::after {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html {
+	color-scheme: var(--color-scheme);
+	scroll-behavior: smooth;
+	-webkit-text-size-adjust: 100%;
+}
+
+html,
+body {
+	min-height: 100%;
+}
+
+/* --- vrstvené pozadie: lineárny gradient + dve radiálne mlhy + vineta --
+   Sklo (backdrop-filter) potrebuje za sebou niečo priesvitné — jedna
+   plochá farba by z neho urobila šedý obdĺžnik. */
+body {
+	font-family: var(--font-body);
+	font-size: var(--fs-md);
+	line-height: var(--lh-body);
+	color: var(--text-1);
+	background-color: var(--bg-0);
+	background-image:
+		radial-gradient(ellipse 70% 50% at 8% 4%, var(--bg-mist-1) 0%, transparent 58%),
+		radial-gradient(ellipse 60% 45% at 96% 12%, var(--bg-mist-2) 0%, transparent 55%),
+		radial-gradient(ellipse 70% 40% at 50% 104%, var(--bg-mist-3) 0%, transparent 60%),
+		linear-gradient(160deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 46%, var(--bg-grad-3) 100%);
+	background-attachment: fixed;
+	background-size: cover;
+	overflow-x: hidden;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+	transition: background-color var(--dur-slow) var(--ease-soft), color var(--dur-slow) var(--ease-soft);
+}
+
+/* vineta: stmaví okraje a dodá hĺbku (na svetlej naopak jas) */
+body::after {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	background: radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, var(--bg-0) 100%);
+	opacity: 0.75;
+}
+
+#root {
+	position: relative;
+	z-index: 10;
+	min-height: 100vh;
+}
+
+/* ===== Typografia ===== */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-family: var(--font-display);
+	font-weight: 600;
+	line-height: var(--lh-tight);
+	letter-spacing: 0.4px;
+	color: var(--text-1);
+}
+
+h1 {
+	font-size: var(--fs-3xl);
+}
+
+h2 {
+	font-size: var(--fs-2xl);
+}
+
+h3 {
+	font-size: var(--fs-xl);
+}
+
+small {
+	font-size: var(--fs-xs);
+}
+
+strong,
+b {
+	font-weight: 600;
+	color: var(--text-1);
+}
+
+/* tabuľkové číslice: sumy, počty, reputácia sa pri prepnutí netriasu */
+.num,
+.stat-value,
+.hex,
+code,
+pre {
+	font-variant-numeric: tabular-nums;
+}
+
+code,
+pre,
+.hex {
+	font-family: var(--font-mono);
+	font-size: 0.92em;
+}
+
+kbd {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	padding: 2px 6px;
+	border-radius: 6px;
+	border: 1px solid var(--glass-border);
+	border-bottom-width: 2px;
+	background: var(--surface-sunken);
+	color: var(--text-2);
+}
+
+/* ===== Odkazy: gradientový podčiarknutý pruh, nie kurzárový underline ==== */
+a {
+	color: var(--primary);
+	text-decoration: none;
+	transition: color var(--dur-fast) ease;
+}
+
+a:not([class]) {
+	background-image: linear-gradient(var(--primary), var(--primary));
+	background-repeat: no-repeat;
+	background-position: 0 100%;
+	background-size: 0% 1px;
+	transition:
+		background-size var(--dur-med) var(--ease-soft),
+		color var(--dur-fast) ease;
+}
+
+a:not([class]):hover,
+a:not([class]):focus-visible {
+	background-size: 100% 1px;
+}
+
+/* ===== Tlačidlá ===== */
+button {
+	font-family: inherit;
+	color: inherit;
+	background: none;
+	border: none;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+	cursor: not-allowed;
+}
+
+/* ===== Prístupnosť: focus len pre klávesnicu ===== */
+:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+	box-shadow: var(--focus-ring-shadow);
+	border-radius: var(--radius-xs);
+}
+
+:focus:not(:focus-visible) {
+	outline: none;
+}
+
+/* preskočný odkaz — skrytý, kým nedostane focus */
+.skip-link {
+	position: absolute;
+	left: -9999px;
+	top: 0;
+	z-index: 100;
+	padding: 10px 18px;
+	border-radius: 0 0 var(--radius-sm) 0;
+	background: var(--surface-3);
+	color: var(--text-1);
+}
+
+.skip-link:focus-visible {
+	left: 0;
+}
+
+/* ===== Výber textu a scrollbar ===== */
+::selection {
+	background: var(--selection-bg);
+	color: var(--selection-fg);
+}
+
+* {
+	scrollbar-width: thin;
+	scrollbar-color: color-mix(in srgb, var(--primary) 55%, transparent) transparent;
+}
+
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--scrollbar-thumb);
+	border-radius: var(--radius-pill);
+	border: 2px solid transparent;
+	background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: linear-gradient(180deg, var(--primary), var(--secondary));
+	background-clip: padding-box;
+}
+
+/* ===== Respektuj `prefers-reduced-motion` (animácie sú dekorácia) ===== */
+@media (prefers-reduced-motion: reduce) {
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+
+	.glass-card:hover,
+	.glass-tile:hover {
+		transform: none;
+	}
+}
+
+/* ===== Tlač: chrome aplikácie preč, svetlé tokeny (tokens.css) ===== */
+@media print {
+	/* `!important` a explicitne aj `html`: canvas kresli práve canvas, a
+	   bez tohto by na papier prešla vrstva mlhy z obrazovkového
+	   pravidla (v Emulácii tlače to je viditeľné ako šedé pozadie). */
+	html,
+	body {
+		background: #ffffff !important;
+		background-image: none !important;
+		color: #14201a;
+		font-size: 12pt;
+	}
+
+	body::after,
+	.ambient-bg,
+	.grid-overlay,
+	.site-header,
+	.site-sidebar,
+	.write-banner,
+	.composer,
+	.filter-bar,
+	.theme-switch,
+	.lang-switch,
+	.header-tools,
+	.claim-actions,
+	.retry-btn,
+	.primary-btn,
+	.ghost-btn,
+	/* Phase 4b: papier sa tlačí ako dokument — akcie, filtre, editor aj
+	   lint banner sú chrome aplikácie, nie obsah papera */
+	.paper-actions,
+	.paper-filter-bar,
+	.paper-editor,
+	.paper-editor-signin,
+	.editor-lint,
+	.editor-actions,
+	.paper-lint-banner,
+	.paper-address,
+	.untrusted-note,
+	.notice,
+	.modal-backdrop {
+		display: none !important;
+	}
+
+	.app-shell {
+		display: block;
+		max-width: none;
+		padding: 0;
+	}
+
+	.glass-card,
+	.glass-tile,
+	.glass-panel {
+		background: #ffffff;
+		border: 1px solid rgba(0, 0, 0, 0.24);
+		box-shadow: none;
+		break-inside: avoid;
+		backdrop-filter: none;
+	}
+
+	/* gradientový prstenec okolo skla je dekorácia — na papieri by
+	   bol druhý rám okolo rám a tlačiareň z neho máš oblasť */
+	.glass-card::after,
+	.glass-tile::after,
+	.glass-panel::after,
+	.event-card::after,
+	.side-link.active::before {
+		content: none !important;
+		display: none !important;
+	}
+
+	/* ── Papiere (Phase 4b): číslované sekcie, popisky, referencie ──────
+	   Dlhý dokument sa láme do strán — hlavičku sekcie, popisek tabuľky a
+	   rovnicu s číslom nesmieme roztrhnúť, inak sa číslovanie na papieri
+	   rozojde s textom odkazov. */
+	.paper-page {
+		padding: 0;
+		border: none;
+	}
+
+	.paper-title {
+		font-size: 20pt;
+	}
+
+	.paper-meta,
+	.paper-card-authors {
+		font-size: 9.5pt;
+	}
+
+	.prose h1,
+	.prose h2,
+	.prose h3,
+	.prose h4,
+	.prose h5,
+	.prose h6,
+	.table-caption {
+		break-after: avoid;
+		page-break-after: avoid;
+	}
+
+	.figure-block,
+	.equation-block,
+	.chart-block,
+	.mermaid-block,
+	.reference-entry,
+	.prose table {
+		break-inside: avoid;
+		page-break-inside: avoid;
+	}
+
+	.equation-block {
+		background: #ffffff;
+		border: none;
+	}
+
+	.paper-references {
+		border-top: 1px solid rgba(0, 0, 0, 0.35);
+		font-size: 10pt;
+	}
+
+	sup.citation a {
+		color: #046b4f;
+	}
+
+	a {
+		color: #046b4f;
+	}
+
+	@page {
+		margin: 18mm 16mm;
+	}
+}

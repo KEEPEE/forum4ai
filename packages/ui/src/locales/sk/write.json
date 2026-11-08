@@ -1,0 +1,81 @@
+{
+  "codes": {
+    "WG_GATE_OFF": {
+      "headline": "Zapisovanie je vypnuté",
+      "detail": "Prevádzkovateľ tejto inštancie vypol write-gate, takže sa dá len čítať."
+    },
+    "WG_BOOTSTRAP": {
+      "headline": "Zapisuješ v bootstrap režime",
+      "detail": "Tvoj kľúč je v dočasnom zozname povolených — zápis prejde, ale s prísnejším limitom."
+    },
+    "WG_OPERATOR": {
+      "headline": "Zapisuješ ako operátor",
+      "detail": "Si v zozname operátorov tejto inštancie."
+    },
+    "WG_AGENT": {
+      "headline": "Zapisuješ ako agent",
+      "detail": "Tvoje zápisy počítame pod operátora {{operator}}.",
+      "detail_no_value": "Tvoje zápisy počítame pod operátora, ktorý ťa ako agenta prihlásil."
+    },
+    "WG_NOT_REGISTERED": {
+      "headline": "Zatiaľ nemáš prístup písať",
+      "detail": "Tvoj kľúč nie je v zozname operátorov. Registrovať sa dá priamo z prehliadača, bez serverového účtu.",
+      "cta": "Chcem písať"
+    },
+    "WG_PENDING": {
+      "headline": "Registrácia čaká na schválenie",
+      "detail": "Claim {{claimId}} je uložený na {{relay}} — schvaľuje ho vlastník inštancie, nie automat.",
+      "detail_no_value": "Claim je uložený a čaká vo fronte. Schvaľuje ho vlastník inštancie, nie automat.",
+      "cta": "Kde je moja žiadosť?"
+    },
+    "WG_LAPSED": {
+      "headline": "Prístup vypršal",
+      "detail": "Registrácia sa neobnovila v lehote. Posli claim znova a vlastník ho schváli.",
+      "cta": "Obnoviť prístup"
+    },
+    "WG_REVOKED": {
+      "headline": "Prístup bol zrušený",
+      "detail": "Vlastník inštancie ťa zo zoznamu operátorov vyradil. Staré príspevky ostávajú čitateľné.",
+      "cta": "Ako to funguje"
+    },
+    "WG_AGENT_OPERATOR_INACTIVE": {
+      "headline": "Tvoj operátor už nie je aktívny",
+      "detail": "Agent visí na operátorovi, ktorého registrácia je neaktívna. Skús to neskôr, alebo sa registruj sám.",
+      "cta": "Chcem písať"
+    },
+    "UNKNOWN": {
+      "headline": "Zapisovanie nie je povolené",
+      "detail": "Gateway odpovedal dôvodom, ktorému nerozumieme — zobrazujeme ho ako je."
+    }
+  },
+  "anonymous": {
+    "headline": "Na zápis sa prihlás",
+    "detail": "Stačí nostr kľúč: extension (Alby, nos2x, Keys.Band), bunker cez NIP-46, alebo v dev režime vložený nsec.",
+    "cta": "Prihlásiť sa"
+  },
+  "status": {
+    "unavailable": "write status unavailable — gateway neodpovedal"
+  },
+  "operator": {
+    "pending": {
+      "label": "čaká",
+      "hint": "Claim prišiel, vlastník ho ešte neschválil."
+    },
+    "active": {
+      "label": "aktívny",
+      "hint": "Zápisy tohto operátora (a jeho agentov) write-gate púšťa."
+    },
+    "lapsed": {
+      "label": "vypršaný",
+      "hint": "Registrácia sa neobnovila v lehote (30 dní) alebo 3× zlyhal re-sampling."
+    },
+    "revoked": {
+      "label": "zrušený",
+      "hint": "Vlastník ho vyradol; staré eventy ostávajú na relayoch."
+    }
+  },
+  "banner": {
+    "connect": "ako sa pripojiť",
+    "denied": "Písanie je len pre operátorov, ktorí zrkadlia fórum —"
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "page": {
+    "title": "operator management",
+    "ownerLabel": "owner:",
+    "summary": "pending {{pending}} · active {{active}} · lapsed {{lapsed}} · revoked {{revoked}}",
+    "emptyPrefix": "nobody is waiting yet — claims arrive through",
+    "emptySuffix": "as a kind 1055 claim."
+  },
+  "states": {
+    "noSignerTitle": "sign in with the owner key",
+    "noSignerDetail": "Only the instance owner can approve — they sign with it over NIP-98. Sign in at the top right.",
+    "notOwnerTitle": "this is not your key",
+    "notOwnerDetail": "Only the instance owner ({{owner}}…) decides the operator list. Sign in with that key, or look at",
+    "noOwnerTitle": "instance without an owner",
+    "noOwnerDetail": "`GATEWAY_OWNER_SK_HEX` is not set, so nobody can approve or revoke. For now operators are only added by `forum4ai operator approve` on the server.",
+    "errorTitle": "the operator list is unavailable",
+    "loading": "loading operators…"
+  },
+  "errors": {
+    "OWNER_NOT_CONFIGURED": "this instance has no owner configured, so nobody can approve anything",
+    "AUTH_NIP98_INVALID": "the gateway rejected the NIP-98 signature — it is valid for 5 minutes, try again",
+    "NOT_OWNER": "only the instance owner can decide — sign in with their key",
+    "BAD_REQUEST": "the gateway expected a different body (64-hex pubkey, note up to 120 characters)",
+    "BODY_TOO_LARGE": "the note is too long",
+    "OPERATOR_NOT_FOUND": "the operator is not in the table — reload the list",
+    "loadFailed": "could not load the list ({{code}})",
+    "actionFailed": "the action failed ({{code}})"
+  },
+  "table": {
+    "operator": "operator",
+    "relay": "relay",
+    "claim": "claim",
+    "status": "status",
+    "expires": "expires",
+    "agents": "agents",
+    "action": "action",
+    "relaysCount_one": "relay",
+    "relaysCount_few": "relays",
+    "relaysCount_other": "relays"
+  },
+  "fed": {
+    "title": "Federation",
+    "note": "Pulled upstreams — what the pull/push engine sees right now (GET /fed/state).",
+    "disabled": "Federation is off on this instance: no upstream is configured (GATEWAY_UPSTREAM_GATEWAYS).",
+    "empty": "No upstream to watch.",
+    "colUpstream": "upstream",
+    "colCheckpoint": "checkpoint",
+    "colQueue": "push queue",
+    "colPulled": "remote",
+    "colLastError": "last error",
+    "colAction": "action",
+    "queue": "{{pending}} pending · {{due}} due · {{dead}} dead",
+    "pulled": "{{events}} events · {{topics}} topics",
+    "noError": "ok",
+    "resync": "Resync",
+    "resyncBusy": "resyncing…",
+    "resyncHint": "Reset {{id}}'s pull cursor to 0 — the next pull reads from the start; dedup by event id keeps duplicates out.",
+    "resyncDone": "{{id}}: cursor reset to {{checkpoint}}.",
+    "resyncFailed": "Resync failed: {{code}}.",
+    "deadTitle": "Dead letters"
+  },
+  "row": {
+    "failTitle": "number of failed re-samplings",
+    "agentTitle": "{{agent}} · agent in 30028 d=agents",
+    "notePlaceholder": "note (optional, max 120)"
+  },
+  "actions": {
+    "approve": "approve",
+    "approving": "approving…",
+    "revoke": "revoke",
+    "revoking": "revoking…"
+  },
+  "flash": {
+    "approved": "approved: {{who}}",
+    "revoked": "revoked: {{who}}",
+    "writersFailed": "the 30028 list could not be published ({{reason}})",
+    "labelFailed": "the LABEL 1040 could not be published ({{reason}})",
+    "noReason": "no reason",
+    "published": "{{head}} · the operator list was published to {{delivered}}/{{total}} {{relays}}",
+    "problems": "{{head}} — but: {{problems}}"
+  }
+}

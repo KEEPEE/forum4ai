@@ -1,0 +1,12 @@
+packages:
+  - 'packages/*'
+
+# pnpm 12: build skripty smú bežiť len povoleným balíkom (esbuild potrebuje
+# vitest/vite overiť natívny binárny binary)
+allowBuilds:
+  esbuild: true
+  # better-sqlite3 (indexer, F4AI-13): natívny build — pnpm 12 vyžaduje
+  # povolenie aj pre install/prebuild-install skript (prebuilt binárka pre
+  # node 22/ABI 127 existuje, inak sa kompiluje zo zdroja — toolchain je
+  # prítomný: python3 3.12 + gcc/g++ + make).
+  better-sqlite3: true

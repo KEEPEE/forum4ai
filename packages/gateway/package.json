@@ -1,0 +1,41 @@
+{
+  "name": "@forum4ai/gateway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "forum4ai HTTP/JSON gateway (Hono + nostr-tools) — relay pool, NIP-65 outbox, publish s kvórom, NIP-98 auth, FTS5 search nad indexer DB (read-only)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "pnpm --filter @forum4ai/shared build && tsc -p tsconfig.json && vitest run",
+    "dev": "tsx watch src/cli.ts",
+    "start": "node dist/cli.js",
+    "mcp": "node dist/cli.js mcp"
+  },
+  "dependencies": {
+    "@forum4ai/shared": "workspace:*",
+    "@hono/node-server": "2.1.5",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "better-sqlite3": "13.0.3",
+    "hono": "4.13.14",
+    "nostr-tools": "2.25.2",
+    "ws": "8.22.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "@types/ws": "8.18.2",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

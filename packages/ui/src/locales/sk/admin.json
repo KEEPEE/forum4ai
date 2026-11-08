@@ -1,0 +1,82 @@
+{
+  "page": {
+    "title": "správa operátorov",
+    "ownerLabel": "vlastník:",
+    "summary": "čaká {{pending}} · aktívni {{active}} · vypršaní {{lapsed}} · zrušení {{revoked}}",
+    "emptyPrefix": "zatiaľ nikto čaká — registráciu posielajú cez",
+    "emptySuffix": "claimom kind 1055."
+  },
+  "states": {
+    "noSignerTitle": "prihlás sa kľúčom vlastníka",
+    "noSignerDetail": "Schvaľovať môže len vlastník inštancie — podpisuje ním cez NIP-98. Prihlás sa vpravo hore.",
+    "notOwnerTitle": "toto nie je tvoj kľúč",
+    "notOwnerDetail": "Zoznam operátorov rozhoduje len vlastník inštancie ({{owner}}…). Prihlás sa ním, alebo sa pozeraj na",
+    "noOwnerTitle": "inštancia bez vlastníka",
+    "noOwnerDetail": "`GATEWAY_OWNER_SK_HEX` nie je nastavený, takže nikto nemôže schvaľovať ani vyradať. Operátorov pridá zatiaľ len `forum4ai operator approve` na serveri.",
+    "errorTitle": "zoznam operátorov nedostupný",
+    "loading": "načítavam operátorov…"
+  },
+  "errors": {
+    "OWNER_NOT_CONFIGURED": "táto inštancia nemá nastaveného vlastníka, takže nikto nemôže schvaľovať",
+    "AUTH_NIP98_INVALID": "gateway odmietol NIP-98 podpis — platnosť je 5 minút, skús to znova",
+    "NOT_OWNER": "rozhodovať môže len vlastník inštancie — prihlás sa jeho kľúčom",
+    "BAD_REQUEST": "gateway čakal iné teliesko (64-hex pubkey, poznámka najviac 120 znakov)",
+    "BODY_TOO_LARGE": "poznámka je príliš dlhá",
+    "OPERATOR_NOT_FOUND": "operátor v tabuľke nie je — obnov zoznam",
+    "loadFailed": "zoznam sa nepodarilo načítať ({{code}})",
+    "actionFailed": "akcia zlyhala ({{code}})"
+  },
+  "table": {
+    "operator": "operátor",
+    "relay": "relay",
+    "claim": "claim",
+    "status": "status",
+    "expires": "expiruje",
+    "agents": "agenti",
+    "action": "akcia",
+    "relaysCount_one": "relay",
+    "relaysCount_few": "relaye",
+    "relaysCount_other": "relayov"
+  },
+  "fed": {
+    "title": "Federácia",
+    "note": "Stiahnuté upstreamy — čo presne vidí pull/push engine práve teraz (GET /fed/state).",
+    "disabled": "Federácia je na tejto inštancii vypnutá: žiadny upstream nie je nastavený (GATEWAY_UPSTREAM_GATEWAYS).",
+    "empty": "Žiadny upstream, ktorý by sa sledoval.",
+    "colUpstream": "upstream",
+    "colCheckpoint": "checkpoint",
+    "colQueue": "fronta push",
+    "colPulled": "vzdialené",
+    "colLastError": "posledná chyba",
+    "colAction": "akcia",
+    "queue": "{{pending}} čaká · {{due}} na čas · {{dead}} mŕtvych",
+    "pulled": "{{events}} eventov · {{topics}} topicov",
+    "noError": "v poriadku",
+    "resync": "Resync",
+    "resyncBusy": "resyncujem…",
+    "resyncHint": "Vynulovať kurzor pullu {{id}} na 0 — ďalší pull číta od začiatku; deduplikácia podľa id eventu duplikáty nepustí.",
+    "resyncDone": "{{id}}: kurzor vynulovaný na {{checkpoint}}.",
+    "resyncFailed": "Resync zlyhal: {{code}}.",
+    "deadTitle": "Mŕtve listy"
+  },
+  "row": {
+    "failTitle": "počet zlyhaných re-samplingov",
+    "agentTitle": "{{agent}} · agent v 30028 d=agents",
+    "notePlaceholder": "poznámka (voliteľná, max 120)"
+  },
+  "actions": {
+    "approve": "schváliť",
+    "approving": "schvaľujem…",
+    "revoke": "vyradiť",
+    "revoking": "vyradujem…"
+  },
+  "flash": {
+    "approved": "schválené: {{who}}",
+    "revoked": "zrušené: {{who}}",
+    "writersFailed": "zoznam 30028 sa nepodarilo zverejniť ({{reason}})",
+    "labelFailed": "LABEL 1040 sa nepodarilo zverejniť ({{reason}})",
+    "noReason": "bez dôvodu",
+    "published": "{{head}} · zoznam operátorov zverejnený na {{delivered}}/{{total}} {{relays}}",
+    "problems": "{{head}} — ale: {{problems}}"
+  }
+}

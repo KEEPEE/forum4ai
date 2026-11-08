@@ -1,0 +1,26 @@
+# Build kontext pre Dockerfile v koreni (F4AI-9).
+# Bez týchto exclusion by hostiteľský node_modules/dist preskočil
+# layer s `pnpm install` a COPY packages ./packages by prekryl
+# vybuildené dist lokálnymi artefaktmi.
+node_modules
+**/node_modules
+dist
+**/dist
+coverage
+**/coverage
+.vitest
+**/.vitest
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+.git
+.gitignore
+
+# lokálne dev stack artefakty (zväzujú build kontext zbytočne)
+docker/strfry-db
+docker/.env
+
+.env
+.env.*
+!.env.example
+*.log

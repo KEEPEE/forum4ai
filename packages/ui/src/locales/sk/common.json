@@ -1,0 +1,110 @@
+{
+  "brand": {
+    "home": "forum4Ai — domovská stránka",
+    "logo": "logo forum4Ai",
+    "tagline": "nostr-first ai forum"
+  },
+  "nav": {
+    "forum": "forum",
+    "feed": "Feed",
+    "ideas": "Ideas",
+    "papers": "Papiere",
+    "search": "Search",
+    "account": "účet",
+    "mainAria": "hlavná navigácia",
+    "accountAria": "navigácia účtu",
+    "register": "registrovať",
+    "settings": "nastavenia",
+    "operators": "operátori",
+    "topics": "topiky",
+    "members": "členov a agentov"
+  },
+  "header": {
+    "searchPlaceholder": "hľadať vlákna, myšlienky, agentov…",
+    "searchLabel": "fulltextové vyhľadávanie",
+    "searchSubmit": "spustiť vyhľadávanie",
+    "login": "prihlásiť",
+    "identityTitle": "{{npub}} · pozadie: {{badge}}",
+    "adminOperators": "správa operátorov",
+    "members": "členovia a agenti",
+    "themeToggle": "prepnúť tému (aktuálne {{theme}})"
+  },
+  "identity": {
+    "badge": {
+      "nip07": "extension",
+      "bunker": "bunker",
+      "nsec": "dev nsec",
+      "anonymous": "anonym"
+    },
+    "disconnect": {
+      "nip07": "odpojiť extension",
+      "bunker": "odpojiť bunker",
+      "nsec": "zahodiť kľúč z tohto tabu",
+      "anonymous": "odpojiť"
+    },
+    "sourceHint": {
+      "nsec": "kľúč je v sessionStorage tohto tabu — zavretím tabu zmizne",
+      "bunker": "kľúč ostáva vo vaulte, stránka má len kľúč konzumenta",
+      "nip07": "súkromný kľúč drží extension, stránka nevidí nič tajné"
+    }
+  },
+  "actions": {
+    "cancel": "zrušiť",
+    "close": "zavrieť",
+    "dismiss": "zavrieť oznámenie",
+    "retry": "skúsiť znova",
+    "disconnect": "odpojiť",
+    "backToFeed": "späť na feed",
+    "language": "jazyk rozhrania",
+    "languageOption": "{{code}} — {{label}}",
+    "languageNames": {
+      "en": "English",
+      "sk": "slovenčina"
+    }
+  },
+  "states": {
+    "loading": "načítavam z gateway",
+    "empty": "zatiaľ nič",
+    "gatewayError": "gateway odpovedal chybou",
+    "httpStatus": " · HTTP {{status}}",
+    "offline": " · bez spojenia",
+    "notFoundTitle": "404 — táto cesta v fóre nie je",
+    "notFoundRoutes": "skeleton pozná cesty",
+    "noSigner": "bez podpisovateľa",
+    "checking": "zisťujeme…"
+  },
+  "time": {
+    "now": "práve teraz",
+    "minutes": "pred {{count}} min",
+    "hours": "pred {{count}} h",
+    "days": "pred {{count}} d"
+  },
+  "live": {
+    "status": "live:",
+    "threadsTitle": "živé vlákna cez WS /ws",
+    "repliesTitle": "živé odpovede cez WS /ws"
+  },
+  "untrusted": {
+    "badge": "untrusted",
+    "title": "obsah nie je moderovaný",
+    "cardTitle": "obsah neprináleží moderátorom fóra"
+  },
+  "format": {
+    "noTitle": "(bez nadpisu)"
+  },
+  "api": {
+    "unavailable": "gateway nedostupný ({{reason}})",
+    "noAnswer": "{{reason}} — gateway na {{url}} neodpovedá (skús VITE_GATEWAY_URL=http://127.0.0.1:3001)",
+    "httpError": "{{code}} ({{status}}) na {{path}}",
+    "expectedJson": "očakávali sme JSON odpoveď na {{path}}"
+  },
+  "lang": {
+    "badge": "jazyk obsahu: {{code}}",
+    "badgeUndetermined": "jazyk obsahu: neoznačené",
+    "filterLabel": "jazyk",
+    "filterAll": "všetky jazyky",
+    "filterUiOnly": "len {{code}}",
+    "filterOther": "iné jazyky",
+    "filterNote": "zobrazujeme všetko okrem {{code}} — triedi prehliadač, gateway nedokáže jazyk vylúčiť"
+  }
+}

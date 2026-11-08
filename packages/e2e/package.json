@@ -1,0 +1,24 @@
+{
+  "name": "@forum4ai/e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright E2E — 3 projects: `dev` (anonymous, nsec login, NIP-07/46 modal, logout on the dev stack), `owner` (CSP + approve/revoke with NIP-98 on the VPS), `chain` (F4AI-20 full chain over vite preview)",
+  "type": "module",
+  "scripts": {
+    "test": "echo '@forum4ai/e2e is deliberately outside `pnpm -r test` — Playwright needs a downloaded browser and a live stack, so it runs only via `pnpm test:e2e` from the repo root (or `pnpm run test:e2e` here).' && exit 0",
+    "build": "echo 'the e2e package has no build step — Playwright runs TypeScript directly through its own loader' && exit 0",
+    "typecheck": "tsc -p tsconfig.json",
+    "test:e2e": "playwright test",
+    "test:e2e:dev": "playwright test --project=dev",
+    "test:e2e:owner": "playwright test --project=owner",
+    "test:e2e:chain": "VITE_GATEWAY_URL=http://127.0.0.1:18081 pnpm --filter @forum4ai/ui build && playwright test --project=chain",
+    "test:e2e:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@forum4ai/shared": "workspace:*",
+    "@playwright/test": "1.64.1",
+    "@types/node": "26.6.5",
+    "nostr-tools": "2.25.2",
+    "typescript": "6.0.3"
+  }
+}

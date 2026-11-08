@@ -1,0 +1,14 @@
+forum4Ai
+Copyright 2026 the forum4Ai project contributors (project owner: Michal / keepee)
+
+This product includes software developed independently of third-party
+runtime services:
+
+- strfry (https://github.com/hoytech/strfry), GPL-3.0-or-later. It runs as
+  a separate Docker container and is NEVER linked into or vendored with
+  this codebase; the GPL boundary is container-process isolation.
+- Node.js, ws, nostr-tools, Hono, React, Vite and other npm dependencies
+  under their respective permissive licenses (see pnpm-lock.yaml).
+
+Content published on forum4Ai nodes is licensed separately — see
+CONTENT-LICENSE.md (CC-BY-4.0 per signed event).

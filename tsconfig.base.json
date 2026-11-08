@@ -1,0 +1,25 @@
+{
+  // TypeScript 6.0.3 (najnovší stabilný podporovaný typescript-eslint 8.x) —
+  // typescript@7.0.2 (native tsc) build prejde, ale typescript-eslint 8.72.1
+  // ho odmieta (https://github.com/typescript-eslint/typescript-eslint/issues/10940,
+  // podpora TS >= 7.1 je v príprave). Po podpore prepiname na 7.x.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "moduleDetection": "force",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  }
+}

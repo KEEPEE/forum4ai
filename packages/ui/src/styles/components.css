@@ -1,0 +1,2269 @@
+/*
+ * forum4Ai — components (Phase 3a)
+ * ================================
+ * Imported LAST, so it overrides `app.css` (same specificity, the later
+ * rule wins). This is an **addition**, not a replacement: every rule here
+ * either enriches an existing class or overrides it with a richer version.
+ * No class was renamed — tests assert
+ * `status-pill claimed`, `.active`, `.notice.error`, `.theme-toggle`, …
+ *
+ * Richness layers (what flightagent lacks):
+ *  1. `.glass-card::after` draws the gradient frame around cards (tokens.css),
+ *  2. hover = lift + glow + stronger frame (not just a background change),
+ *  3. status/badge pills carry a glowing dot and a tint, not only a border,
+ *  4. tables have zebra striping, a hover row and a sticky header,
+ *  5. the write-banner picks its semantic colour from WHAT it says
+ *     (`:has(.write-banner-note)` = unknown, not a warning),
+ *  6. skeleton shimmer, focus rings, scrollbar, selection, prose.
+ *
+ * Deliberate use of `color-mix()`: shades are ALWAYS mixed from a token, so
+ * the theme switches with no further change. No hard-coded colours here
+ * (`tokens.test.ts` guards app.css; we hold this rule voluntarily).
+ */
+
+/* ==========================================================================
+   1 — Header
+   ========================================================================== */
+.site-header {
+	position: relative;
+	padding: 16px 22px;
+	gap: 18px;
+	border-radius: var(--radius-tile);
+	background:
+		linear-gradient(120deg, var(--glass-bg-accent) 0%, transparent 42%),
+		var(--glass-bg);
+	box-shadow: var(--shadow-3), var(--shadow-inset-hairline);
+}
+
+/* gold/emerald line under the header = the "head" of the glass app */
+.site-header::after {
+	content: '';
+	position: absolute;
+	left: 8%;
+	right: 8%;
+	bottom: -1px;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, var(--glow-primary) 22%, var(--glow-secondary) 78%, transparent);
+	opacity: 0.8;
+	pointer-events: none;
+}
+
+.brand-logo {
+	width: 42px;
+	height: 42px;
+	transition: transform var(--dur-med) var(--ease-pop);
+}
+
+.brand:hover .brand-logo {
+	transform: rotate(-8deg) scale(1.06);
+}
+
+.brand-name {
+	font-size: 23px;
+	letter-spacing: 5px;
+}
+
+/* audit 7.5 P1-7: the tagline has its own token — in nexaverse it is white 62 %
+   (magenta on turquoise measured ~2:1); glass themes keep the current mix */
+.brand-tagline {
+	display: block;
+	font-size: 10px;
+	letter-spacing: 3.4px;
+	color: var(--tagline-fg);
+}
+
+/* ===== Search box ===== */
+.search-box {
+	padding: 6px 8px 6px 16px;
+	gap: 10px;
+	background: var(--surface-sunken);
+	border: 1px solid var(--glass-border);
+	box-shadow: inset 0 1px 3px color-mix(in srgb, var(--bg-0) 45%, transparent);
+	transition:
+		border-color var(--dur-med) ease,
+		box-shadow var(--dur-med) ease,
+		background var(--dur-med) ease;
+}
+
+.search-box:hover {
+	border-color: color-mix(in srgb, var(--primary) 40%, var(--glass-border));
+}
+
+.search-box:focus-within {
+	background: var(--glass-bg);
+	border-color: var(--primary);
+	box-shadow: var(--focus-ring-shadow), inset 0 1px 3px color-mix(in srgb, var(--bg-0) 30%, transparent);
+}
+
+.search-box>span {
+	color: var(--text-dim);
+	font-size: 17px;
+	transition: color var(--dur-med) ease;
+}
+
+.search-box:focus-within>span {
+	color: var(--primary);
+}
+
+.search-box input {
+	font-size: var(--fs-md);
+}
+
+.search-box input::placeholder {
+	color: color-mix(in srgb, var(--text-dim) 80%, transparent);
+}
+
+/* ===== 3-way theme switcher (Phase 3a) =====
+   Segmented control in the `.theme-toggle` family (the language switcher
+   uses it too). The active segment gets a gradient fill + glow, the others
+   only a border. `data-testid="theme-toggle"` sits on the GROUP: clicking
+   free space in the group cycles the themes (backwards compatible with the
+   original toggle). */
+.theme-switch {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	padding: 3px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-border);
+	background: var(--surface-sunken);
+	box-shadow: inset 0 1px 3px color-mix(in srgb, var(--bg-0) 45%, transparent);
+}
+
+/* the language switcher (Phase 2a) is a visual sibling — same group, so
+   side by side they read as a single control */
+.lang-switch {
+	gap: 3px;
+	padding: 3px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-border);
+	background: var(--surface-sunken);
+	box-shadow: inset 0 1px 3px color-mix(in srgb, var(--bg-0) 45%, transparent);
+}
+
+.theme-switch .theme-toggle,
+.lang-switch .theme-toggle {
+	position: relative;
+	gap: 6px;
+	padding: 6px 11px;
+	border-radius: var(--radius-pill);
+	border: 1px solid transparent;
+	background: transparent;
+	font-size: var(--fs-xs);
+	letter-spacing: 0.6px;
+	color: var(--text-muted);
+}
+
+.lang-switch .theme-toggle {
+	font-family: var(--font-display);
+	font-size: 11px;
+	letter-spacing: 1.4px;
+	padding: 6px 10px;
+}
+
+.theme-switch .theme-toggle:hover,
+.lang-switch .theme-toggle:hover {
+	color: var(--text-1);
+	border-color: var(--glass-border);
+	background: var(--glass-bg-hover);
+	box-shadow: none;
+}
+
+.theme-switch .theme-toggle[aria-pressed='true'],
+.lang-switch .theme-toggle[aria-pressed='true'] {
+	color: var(--on-accent);
+	border-color: transparent;
+	background: linear-gradient(135deg, var(--accent-fill-1), var(--accent-fill-2));
+	box-shadow: 0 2px 12px -2px var(--glow-primary), inset 0 1px 0 color-mix(in srgb, #ffffff 35%, transparent);
+	text-shadow: none;
+}
+
+.theme-switch .theme-toggle>span[aria-hidden='true'] {
+	font-size: 14px;
+	line-height: 1;
+}
+
+/* ===== Identity chip + account menu ===== */
+.identity-chip {
+	padding: 6px 12px;
+	font-family: var(--font-mono);
+	font-size: 12px;
+	letter-spacing: 0.3px;
+	background: var(--surface-sunken);
+	transition:
+		border-color var(--dur-med) ease,
+		box-shadow var(--dur-med) ease,
+		color var(--dur-med) ease;
+}
+
+.identity-chip:hover {
+	color: var(--text-1);
+	border-color: var(--secondary);
+	box-shadow: 0 0 18px -4px var(--glow-secondary);
+}
+
+.identity-chip>span[aria-hidden='true'] {
+	color: var(--secondary);
+	text-shadow: 0 0 10px var(--glow-secondary);
+}
+
+.identity-source {
+	border-color: color-mix(in srgb, var(--secondary) 45%, var(--glass-border));
+	background: color-mix(in srgb, var(--secondary) 14%, transparent);
+	color: color-mix(in srgb, var(--secondary) 78%, var(--text-1));
+}
+
+.identity-menu {
+	background: var(--surface-3);
+	border: 1px solid var(--glass-border);
+	box-shadow: var(--shadow-5), var(--shadow-inset-hairline);
+	backdrop-filter: blur(var(--blur-glass-lg)) saturate(var(--saturate-glass));
+	-webkit-backdrop-filter: blur(var(--blur-glass-lg)) saturate(var(--saturate-glass));
+	animation: forum-pop-in var(--dur-med) var(--ease-pop);
+}
+
+.identity-menu button,
+.identity-menu a {
+	border-radius: var(--radius-sm);
+	transition:
+		background var(--dur-fast) ease,
+		color var(--dur-fast) ease,
+		padding-left var(--dur-fast) var(--ease-soft);
+}
+
+.identity-menu button:hover,
+.identity-menu a:hover {
+	background: var(--glass-bg-accent);
+	color: var(--primary);
+	padding-left: 14px;
+}
+
+/* ==========================================================================
+   2 — Sidebar
+   ========================================================================== */
+.site-sidebar {
+	padding: 18px 16px;
+	border-radius: var(--radius-tile);
+	background:
+		linear-gradient(180deg, var(--glass-bg-accent) 0%, transparent 34%),
+		var(--glass-bg);
+	box-shadow: var(--shadow-3), var(--shadow-inset-hairline);
+}
+
+.site-sidebar::-webkit-scrollbar {
+	width: 6px;
+}
+
+/* section: title + gradient rule (pattern from `.nav-section-title` in tm-607) */
+.side-title {
+	position: relative;
+	padding-bottom: 8px;
+	margin-bottom: 12px;
+	font-size: 10px;
+	letter-spacing: 2.6px;
+	color: color-mix(in srgb, var(--text-muted) 88%, var(--primary));
+}
+
+.side-title::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 46px;
+	height: 2px;
+	border-radius: var(--radius-pill);
+	background: linear-gradient(90deg, var(--primary), var(--secondary), transparent);
+}
+
+.side-link {
+	position: relative;
+	padding: 10px 12px;
+	font-size: var(--fs-md);
+	overflow: hidden;
+	transition:
+		background var(--dur-med) ease,
+		border-color var(--dur-med) ease,
+		color var(--dur-med) ease,
+		transform var(--dur-med) var(--ease-soft),
+		box-shadow var(--dur-med) ease;
+}
+
+.side-link:hover {
+	transform: translateX(3px);
+	color: var(--text-1);
+}
+
+.side-link .link-icon {
+	font-size: 15px;
+	opacity: 0.85;
+}
+
+/* active item: gold/emerald rule on the left + glow (tm-607 `.nav-link.active`).
+   audit 7.5 P3: a full border around the active item was a square inside the
+   glass — the indicator stays the left accent edge and the gradient backdrop */
+.side-link.active {
+	background: linear-gradient(90deg, var(--glass-bg-accent), transparent 92%);
+	border-color: transparent;
+	color: var(--primary);
+	box-shadow: var(--shadow-glow), var(--shadow-inset-hairline);
+}
+
+.side-link.active::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 18%;
+	bottom: 18%;
+	width: 3px;
+	border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+	background: linear-gradient(180deg, var(--primary), var(--secondary));
+	box-shadow: 0 0 12px var(--glow-primary);
+}
+
+.side-link.active .link-icon {
+	opacity: 1;
+	text-shadow: 0 0 12px var(--glow-primary);
+}
+
+/* topic tree: hook a child into its parent with a gradient rule */
+.topic-tree .topic-tree {
+	border-left: 1px solid transparent;
+	border-image: linear-gradient(180deg, var(--glass-hairline), transparent) 1;
+}
+
+.topic-link {
+	transition:
+		color var(--dur-fast) ease,
+		background var(--dur-fast) ease,
+		padding-left var(--dur-fast) var(--ease-soft);
+}
+
+.topic-link:hover {
+	padding-left: 12px;
+	background: linear-gradient(90deg, var(--glass-bg-hover), transparent);
+}
+
+.topic-link.active {
+	color: var(--primary);
+	background: linear-gradient(90deg, var(--glass-bg-accent), transparent);
+}
+
+.topic-count {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	letter-spacing: 0.5px;
+}
+
+.topic-thread-count {
+	color: var(--secondary);
+	text-shadow: 0 0 8px color-mix(in srgb, var(--glow-secondary) 70%, transparent);
+}
+
+/* audit 7.5 P3: two counts side by side ("9 5") read as one number
+   (95) — put a separator between thread and subtopic counts */
+.topic-thread-count+.topic-count::before {
+	content: '·';
+	margin-right: 5px;
+	color: var(--text-dim);
+	text-shadow: none;
+}
+
+/* ==========================================================================
+   3 — Pages
+   ========================================================================== */
+.page-title {
+	font-size: var(--fs-3xl);
+	background-size: 180% 180%;
+	transition: background-position var(--dur-slow) var(--ease-soft);
+}
+
+.page-head:hover .page-title {
+	background-position: 100% 50%;
+}
+
+.page-subtitle {
+	font-size: var(--fs-md);
+	color: var(--text-muted);
+}
+
+.breadcrumbs {
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	letter-spacing: 1.2px;
+}
+
+.breadcrumbs a:hover {
+	color: var(--secondary);
+}
+
+/* ==========================================================================
+   4 — Karty (feed, vlákno, results, ideas)
+   ========================================================================== */
+.stack {
+	gap: 18px;
+}
+
+.grid-tiles {
+	gap: 20px;
+}
+
+.event-card {
+	padding: 20px 22px;
+}
+
+/* karta obsahu: jemný akcentový roh (emerald vľavo hore, gold vpravo dole) */
+.event-card::after {
+	background: linear-gradient(135deg,
+			var(--glow-primary) 0%,
+			transparent 34%,
+			transparent 66%,
+			var(--glow-secondary) 100%);
+	opacity: 0.4;
+}
+
+.event-card:hover::after {
+	opacity: 0.95;
+}
+
+.event-card h3 {
+	font-size: var(--fs-xl);
+	letter-spacing: 0.2px;
+	transition: color var(--dur-med) ease;
+}
+
+.event-card:hover h3 {
+	color: var(--primary);
+}
+
+.event-body {
+	font-size: var(--fs-md);
+	line-height: var(--lh-body);
+	color: var(--text-2);
+	-webkit-mask-image: linear-gradient(180deg, #000 0, #000 72%, transparent 100%);
+	mask-image: linear-gradient(180deg, #000 0, #000 72%, transparent 100%);
+}
+
+.event-body mark {
+	/* Search snippets: FTS5 `[hit]` markers become <mark> (see lib/fts-snippet.ts).
+	   The browser default (black on yellow) fights all three themes. */
+	color: var(--text-1);
+	background: color-mix(in srgb, var(--accent) 28%, transparent);
+	border-radius: 3px;
+	padding: 0 2px;
+}
+
+.event-meta {
+	gap: 10px 12px;
+	padding-top: 12px;
+	margin-top: 14px;
+	border-top: 1px solid color-mix(in srgb, var(--glass-border) 70%, transparent);
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	letter-spacing: 0.3px;
+}
+
+/* audit 7.5 P1-6 (BROKEN): `.event-meta` je footer s deliacou linkou —
+   ale v karte príspevku je to SÚČASNE prvý riadok (badges + čas). Ako
+   first-child nesmie niesť footer markup: 14px margin + 12px padding +
+   border-top = ~35 px prázdneho pásika a deliaca linka navrch karty. */
+.event-card>.event-meta:first-child {
+	margin-top: 0;
+	padding-top: 0;
+	border-top: 0;
+}
+
+/* audit 7.5 P2-12 (BROKEN): npub je jeden token — nesmie sa lámať
+   (v autoroch papiera sa rozpolil na dva riadky pred ORCID) */
+.pubkey-chip {
+	color: var(--text-muted);
+	white-space: nowrap;
+	transition: color var(--dur-fast) ease, text-shadow var(--dur-fast) ease;
+}
+
+.pubkey-chip:hover {
+	color: var(--secondary);
+	text-shadow: 0 0 10px var(--glow-secondary);
+}
+
+.tag-chip {
+	border-color: color-mix(in srgb, var(--primary) 26%, var(--glass-border));
+	background: color-mix(in srgb, var(--primary) 9%, transparent);
+	color: color-mix(in srgb, var(--primary) 72%, var(--text-1));
+	transition:
+		background var(--dur-fast) ease,
+		border-color var(--dur-fast) ease;
+}
+
+.tag-chip:hover {
+	background: color-mix(in srgb, var(--primary) 18%, transparent);
+	border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+}
+
+/* ==========================================================================
+   5 — Badge a pill systém
+   ========================================================================== */
+.kind-badge,
+.status-pill,
+.accepted-pill,
+.suggest-pill,
+.lang-badge,
+.untrusted-badge,
+.origin-chip,
+.rating-badge,
+.filter-pill {
+	position: relative;
+	font-family: var(--font-display);
+	letter-spacing: 1.2px;
+	backdrop-filter: blur(var(--blur-glass-sm));
+	-webkit-backdrop-filter: blur(var(--blur-glass-sm));
+}
+
+/* kind badge — tm-607 `.nav-badge`: tint + vnútorná linka, nie plná farba */
+.kind-badge {
+	padding: 3px 11px;
+	font-size: 10px;
+	letter-spacing: 2px;
+	box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 12%, transparent);
+}
+
+/* audit 7.5 P2-10: v nexaverse bol badge „IDEA CALL" magenta na magente —
+   text ide do light slotu secondary, tint pozadia ostáva */
+.kind-badge.idea {
+	color: var(--secondary-strong);
+	background: color-mix(in srgb, var(--secondary) 13%, var(--glass-bg));
+	box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 14%, transparent), 0 0 14px -6px var(--glow-secondary);
+}
+
+.kind-badge.collab {
+	background: color-mix(in srgb, var(--accent) 13%, var(--glass-bg));
+	box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 14%, transparent), 0 0 14px -6px var(--glow-accent);
+}
+
+/* sémantické tóny (write-gate copy, stav operátora, stav registrácie) */
+.kind-badge.ok {
+	border-color: var(--ok);
+	color: var(--ok);
+	background: var(--ok-soft);
+	box-shadow: 0 0 14px -6px var(--ok-glow);
+}
+
+.kind-badge.info {
+	border-color: var(--info);
+	color: var(--info);
+	background: var(--info-soft);
+	box-shadow: 0 0 14px -6px var(--info-glow);
+}
+
+.kind-badge.warn {
+	border-color: var(--warn);
+	color: var(--warn);
+	background: var(--warn-soft);
+	box-shadow: 0 0 14px -6px var(--warn-glow);
+}
+
+.kind-badge.error {
+	border-color: var(--error);
+	color: var(--error);
+	background: var(--error-soft);
+	box-shadow: 0 0 14px -6px var(--error-glow);
+}
+
+/* status pill — svietiaci bodok ako tm-607 `.status-badge::before` */
+.status-pill {
+	padding: 3px 11px 3px 22px;
+	font-size: var(--fs-xs);
+	background: var(--surface-sunken);
+}
+
+.status-pill::before {
+	content: '';
+	position: absolute;
+	left: 9px;
+	top: 50%;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+	box-shadow: 0 0 8px currentColor;
+	transform: translateY(-50%);
+}
+
+.status-pill.open {
+	background: color-mix(in srgb, var(--primary) 11%, var(--surface-sunken));
+}
+
+.status-pill.claimed {
+	background: color-mix(in srgb, var(--secondary) 12%, var(--surface-sunken));
+}
+
+.status-pill.in_progress {
+	background: color-mix(in srgb, var(--accent) 12%, var(--surface-sunken));
+}
+
+.status-pill.review {
+	background: var(--warn-soft);
+}
+
+.status-pill.done {
+	background: var(--ok-soft);
+}
+
+.status-pill.cancelled {
+	background: var(--surface-sunken);
+	opacity: 0.8;
+}
+
+.accepted-pill {
+	border-color: var(--ok);
+	background: var(--ok-soft);
+	box-shadow: 0 0 14px -8px var(--ok-glow);
+}
+
+.suggest-pill {
+	font-family: var(--font-mono);
+	letter-spacing: 0.4px;
+}
+
+/* lang badge (NIP-32) — dashed rám ostáva, pridaná jemná vrstva skla */
+.lang-badge {
+	background: var(--surface-sunken);
+	border-color: color-mix(in srgb, var(--text-dim) 55%, transparent);
+	color: var(--text-muted);
+}
+
+.rating-badge {
+	background: color-mix(in srgb, var(--secondary) 12%, var(--glass-bg));
+	box-shadow: 0 0 16px -8px var(--glow-secondary);
+}
+
+.untrusted-badge {
+	border-style: dotted;
+	background: var(--surface-sunken);
+}
+
+/*
+ * Origin chip (Phase 6b, dizajn Q5) — odkiaľ ten ktorý hit JE. Tón
+ * nedrží sám, berie ho od `.kind-badge.info` (cudzia inštancia) alebo
+ * `.kind-badge.warn` (cudzí autor mimo nášho adresára pisúcich), lebo
+ * presne tieto dva stavy už UI niekde rozlišuje a farebná reč má byť
+ * jedna. Monospace preto, že label je hostname — nie slovo, ale ident.
+ */
+.origin-chip {
+	font-family: var(--font-mono);
+	letter-spacing: 0.4px;
+	max-width: 18ch;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* ==========================================================================
+   6 — Štatistiky / reputácia
+   ========================================================================== */
+.stat-grid {
+	gap: 16px;
+}
+
+.stat {
+	padding: 20px 18px;
+	border-radius: var(--radius-md);
+	background:
+		radial-gradient(circle at 50% 0%, var(--glass-bg-accent) 0%, transparent 62%),
+		var(--glass-bg);
+	border: 1px solid var(--glass-border);
+	transition:
+		transform var(--dur-med) var(--ease-soft),
+		box-shadow var(--dur-med) ease,
+		border-color var(--dur-med) ease;
+}
+
+.stat:hover {
+	transform: translateY(-3px);
+	border-color: color-mix(in srgb, var(--primary) 45%, var(--glass-border));
+	box-shadow: var(--shadow-3), var(--shadow-glow);
+}
+
+.stat .stat-value {
+	font-family: var(--font-mono);
+	font-size: var(--fs-3xl);
+	font-weight: 700;
+	letter-spacing: 1px;
+	background: var(--brand-gradient);
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+}
+
+.stat .stat-label {
+	font-family: var(--font-display);
+	font-size: 10px;
+	letter-spacing: 2.4px;
+}
+
+/* progress bary: gradient + lesk, ktorý pri presune „prebehne" */
+.progress-track {
+	height: 9px;
+	background: var(--surface-sunken);
+	box-shadow: inset 0 1px 3px color-mix(in srgb, var(--bg-0) 55%, transparent);
+}
+
+.progress-fill {
+	position: relative;
+	background: linear-gradient(90deg, var(--primary), var(--secondary));
+	box-shadow: 0 0 14px -2px var(--glow-primary);
+	overflow: hidden;
+}
+
+.progress-fill::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, transparent, color-mix(in srgb, #ffffff 45%, transparent), transparent);
+	transform: translateX(-100%);
+	animation: forum-shimmer 2.4s var(--ease-soft) infinite;
+}
+
+/* ==========================================================================
+   7 — Vláknové stromy a timeline
+   ========================================================================== */
+.reply-node {
+	position: relative;
+	padding-left: 20px;
+	border-left: 1px solid transparent;
+	border-image: linear-gradient(180deg, var(--glass-hairline) 0%, var(--glass-border) 40%, transparent 100%) 1;
+}
+
+.reply-node:hover {
+	border-image: linear-gradient(180deg, var(--glow-primary) 0%, var(--glass-border) 60%, transparent 100%) 1;
+}
+
+.status-timeline {
+	border-left: 1px solid transparent;
+	border-image: linear-gradient(180deg, var(--primary), var(--secondary) 60%, transparent 100%) 1;
+}
+
+.status-timeline li::before {
+	background: linear-gradient(135deg, var(--primary), var(--secondary));
+	box-shadow: 0 0 12px var(--glow-primary);
+	border: 1px solid var(--glass-hairline);
+}
+
+/* ==========================================================================
+   8 — Stavy (loading / error / empty) + skeleton
+   ========================================================================== */
+.state {
+	gap: 16px;
+	padding: 52px 26px;
+	border-radius: var(--radius-tile);
+	/* prázdny panel nesmie vyzerať ako obal bez obsahu — horná aura
+	   prezradí, že je to panel, nie díra do pozadia */
+	background:
+		radial-gradient(ellipse 72% 44% at 50% 0%, var(--glass-bg-accent) 0%, transparent 72%),
+		var(--glass-bg);
+}
+
+.state-title {
+	font-size: var(--fs-md);
+	letter-spacing: 3px;
+}
+
+.state-detail {
+	font-size: var(--fs-sm);
+	line-height: var(--lh-body);
+	color: var(--text-muted);
+}
+
+.state-error {
+	border-color: color-mix(in srgb, var(--error) 55%, var(--glass-border));
+	background:
+		radial-gradient(ellipse 80% 60% at 50% 0%, var(--error-soft) 0%, transparent 70%),
+		var(--glass-bg);
+	box-shadow: 0 0 30px -18px var(--error-glow), var(--shadow-inset-hairline);
+}
+
+.state-error .state-title {
+	color: var(--error);
+	text-shadow: 0 0 18px color-mix(in srgb, var(--error-glow) 80%, transparent);
+}
+
+.state-empty .state-title,
+.state[data-testid='state-empty'] .state-title {
+	color: var(--text-muted);
+}
+
+.spinner {
+	position: relative;
+	border-color: var(--glass-border);
+	border-top-color: var(--primary);
+	border-right-color: var(--secondary);
+	box-shadow: 0 0 22px -6px var(--glow-primary);
+}
+
+/* skeleton loader (Phase 3b: RichContent bloky, obrázky diagramov) */
+.skeleton {
+	position: relative;
+	overflow: hidden;
+	border-radius: var(--radius-sm);
+	background: var(--surface-sunken);
+	border: 1px solid var(--glass-border);
+}
+
+.skeleton::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg,
+			transparent 0%,
+			color-mix(in srgb, var(--glass-highlight) 60%, transparent) 50%,
+			transparent 100%);
+	transform: translateX(-100%);
+	animation: forum-shimmer 1.5s var(--ease-soft) infinite;
+}
+
+.skeleton-line {
+	height: 12px;
+	margin-bottom: 10px;
+}
+
+.skeleton-card {
+	height: 120px;
+	border-radius: var(--radius-card);
+}
+
+/* ==========================================================================
+   9 — Formuláre, tlačidlá, composer
+   ========================================================================== */
+.composer {
+	gap: 16px;
+	padding: 22px;
+	border-radius: var(--radius-tile);
+}
+
+/* karta s hover zdvihom je pre formulár nepohodlná (kurzor utíka) */
+.composer:hover,
+.glass-modal:hover,
+table.event-card:hover {
+	transform: none;
+}
+
+.field label {
+	font-family: var(--font-display);
+	font-size: 10px;
+	letter-spacing: 2.4px;
+	color: color-mix(in srgb, var(--text-muted) 85%, var(--primary));
+}
+
+.field input,
+.field textarea,
+.field select,
+.filter-topic-form input {
+	background: var(--surface-sunken);
+	box-shadow: inset 0 1px 3px color-mix(in srgb, var(--bg-0) 45%, transparent);
+	caret-color: var(--secondary);
+}
+
+.field input:hover,
+.field textarea:hover,
+.field select:hover {
+	border-color: color-mix(in srgb, var(--primary) 40%, var(--glass-border));
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus,
+.filter-topic-form input:focus {
+	background: var(--glass-bg);
+	border-color: var(--primary);
+	box-shadow: var(--focus-ring-shadow), inset 0 1px 3px color-mix(in srgb, var(--bg-0) 25%, transparent);
+}
+
+.field textarea {
+	min-height: 130px;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+	color: color-mix(in srgb, var(--text-dim) 85%, transparent);
+}
+
+/* primary = ZLATÉ tlačidlo (glass-dark), emerald (glass-light), cyan (nexaverse)
+   → primárna akcia je v každej téme iná, ale vždy tá najvýraznejšia */
+.primary-btn {
+	position: relative;
+	padding: 11px 24px;
+	border: 1px solid transparent;
+	background: linear-gradient(135deg, var(--accent-fill-1), var(--accent-fill-2));
+	color: var(--on-accent);
+	font-weight: 600;
+	box-shadow: var(--shadow-2), inset 0 1px 0 color-mix(in srgb, #ffffff 32%, transparent);
+	overflow: hidden;
+	transition:
+		transform var(--dur-med) var(--ease-pop),
+		box-shadow var(--dur-med) ease,
+		filter var(--dur-med) ease;
+}
+
+.primary-btn::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, transparent, color-mix(in srgb, #ffffff 38%, transparent), transparent);
+	transform: translateX(-110%);
+	transition: transform var(--dur-slow) var(--ease-soft);
+	pointer-events: none;
+}
+
+.primary-btn:hover:not(:disabled) {
+	transform: translateY(-2px);
+	filter: saturate(1.15) brightness(1.05);
+	box-shadow:
+		var(--shadow-4),
+		0 0 26px -6px var(--glow-secondary),
+		inset 0 1px 0 color-mix(in srgb, #ffffff 40%, transparent);
+}
+
+.primary-btn:hover:not(:disabled)::after {
+	transform: translateX(110%);
+}
+
+.primary-btn:active:not(:disabled) {
+	transform: translateY(0) scale(0.985);
+}
+
+.primary-btn:disabled {
+	background: var(--surface-sunken);
+	border-color: var(--glass-border);
+	color: var(--text-dim);
+	box-shadow: none;
+}
+
+.ghost-btn {
+	border-color: var(--glass-border);
+	background: var(--glass-bg);
+	transition:
+		color var(--dur-fast) ease,
+		border-color var(--dur-fast) ease,
+		background var(--dur-fast) ease,
+		box-shadow var(--dur-fast) ease,
+		transform var(--dur-fast) var(--ease-soft);
+}
+
+.ghost-btn:hover:not(:disabled) {
+	color: var(--primary);
+	border-color: color-mix(in srgb, var(--primary) 55%, var(--glass-border));
+	background: var(--glass-bg-accent);
+	box-shadow: 0 0 16px -8px var(--glow-primary);
+	transform: translateY(-1px);
+}
+
+/* tabs (login pozadie, composer preview) */
+.tab-btn {
+	background: var(--surface-sunken);
+	transition:
+		color var(--dur-fast) ease,
+		border-color var(--dur-fast) ease,
+		background var(--dur-fast) ease,
+		box-shadow var(--dur-fast) ease;
+}
+
+.tab-btn:hover {
+	border-color: color-mix(in srgb, var(--accent) 50%, var(--glass-border));
+	background: var(--glass-bg-hover);
+}
+
+.tab-btn.active {
+	color: var(--text-1);
+	border-color: color-mix(in srgb, var(--primary) 65%, transparent);
+	background: linear-gradient(135deg, var(--glass-bg-accent), var(--surface-accent));
+	box-shadow: var(--shadow-glow), var(--shadow-inset-hairline);
+}
+
+/* signed event JSON — code block s rámom a gradientovým lemom */
+.signed-event {
+	background: var(--code-bg);
+	border: 1px solid var(--code-border);
+	border-radius: var(--radius-sm);
+	color: var(--code-fg);
+	box-shadow: inset 0 1px 3px color-mix(in srgb, var(--bg-0) 40%, transparent);
+}
+
+.signed-event summary {
+	font-family: var(--font-display);
+	letter-spacing: 1.6px;
+	text-transform: uppercase;
+	font-size: var(--fs-xs);
+}
+
+.notice {
+	font-size: var(--fs-sm);
+	color: var(--text-muted);
+}
+
+.notice.error {
+	color: var(--error);
+	text-shadow: 0 0 16px color-mix(in srgb, var(--error-glow) 70%, transparent);
+}
+
+.notice.ok {
+	color: var(--ok);
+}
+
+.notice.info {
+	color: var(--info);
+}
+
+/* ==========================================================================
+   9b — gény formulárov: `select` a `input` MIMO `.field`
+   ==========================================================================
+   Jazykový filter na vyhľadávaní je samostatný `<select>` (nie v `.field`),
+   bez tohto pravidla by dostal natívny vzhľad — v tmavej téme biely
+   obdĺžnik s čiernym textom, teda kontrastný šok uprostred skla.
+
+   `:where()` = nulová špecifickosť: pravidlo je LEN podklad, takže
+   `.field input`, `.search-box input` a ďalšie triedované varianty
+   ho prepísajú aj keď sú v skoršom súbore. */
+:where(select,
+	input[type='search'],
+	input[type='text'],
+	input[type='number']) {
+	font-family: inherit;
+	font-size: var(--fs-sm);
+	color: var(--text-1);
+	background: var(--surface-sunken);
+	border: 1px solid var(--glass-border);
+	border-radius: var(--radius-sm);
+	padding: 8px 12px;
+	outline: none;
+	transition:
+		border-color var(--dur-med) ease,
+		box-shadow var(--dur-med) ease,
+		background var(--dur-med) ease;
+}
+
+:where(select) {
+	appearance: none;
+	-webkit-appearance: none;
+	padding-right: 32px;
+	background-image:
+		linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+		linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+	background-position:
+		calc(100% - 17px) calc(50% - 2px),
+		calc(100% - 12px) calc(50% - 2px);
+	background-size:
+		5px 5px,
+		5px 5px;
+	background-repeat: no-repeat;
+	cursor: pointer;
+}
+
+/* `.field select` prepisuje `background` shorthandom (žiadny chevron),
+   takže šípku musíme vrátiť aj tu — inak by composer nemal select indikátor */
+.field select {
+	padding-right: 32px;
+	background-image:
+		linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+		linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+	background-position:
+		calc(100% - 17px) calc(50% - 2px),
+		calc(100% - 12px) calc(50% - 2px);
+	background-size:
+		5px 5px,
+		5px 5px;
+	background-repeat: no-repeat;
+}
+
+:where(select, input):hover {
+	border-color: color-mix(in srgb, var(--primary) 40%, var(--glass-border));
+}
+
+:where(select):focus,
+:where(select):focus-visible {
+	border-color: var(--primary);
+	box-shadow: var(--focus-ring-shadow);
+}
+
+:where(select option) {
+	background: var(--surface-3);
+	color: var(--text-1);
+}
+
+/* search box: tlačidlo vnútri pilulky nie je samostatné ghost tlačidlo */
+.search-box .ghost-btn {
+	padding: 6px 14px;
+	font-family: var(--font-display);
+	font-size: var(--fs-xs);
+	letter-spacing: 1.6px;
+	text-transform: uppercase;
+	border-color: transparent;
+	background: var(--surface-2);
+	color: var(--text-2);
+}
+
+.search-box .ghost-btn:hover {
+	background: linear-gradient(135deg, var(--accent-fill-1), var(--accent-fill-2));
+	color: var(--on-accent);
+	box-shadow: 0 0 16px -6px var(--glow-primary);
+}
+
+/* ==========================================================================
+   10 — Write-gate banner: sémantika podľa OBSAHU (CSS-only, `:has()`)
+   ==========================================================================
+   Banner nemá tone triedu (mark-up z Phase 1b nemeníme), ale jeho
+   podreadené elementy prezradia, o aký stav ide:
+     .write-banner-note   → status sme nezistili  → info (neutrálny)
+     .write-banner-reason → gateway povedal „nie" → warn (tvrdé zamietnutie)
+   Bez `:has()` ostáva warn, čo je konzervatívny predvolený stav. */
+.write-banner {
+	position: relative;
+	gap: 10px 16px;
+	padding: 13px 18px;
+	border-radius: var(--radius-md);
+	background:
+		radial-gradient(ellipse 70% 100% at 0% 0%, var(--warn-soft) 0%, transparent 72%),
+		var(--glass-bg);
+	border-color: color-mix(in srgb, var(--warn) 62%, var(--glass-border));
+	color: color-mix(in srgb, var(--warn) 82%, var(--text-1));
+	box-shadow: 0 0 26px -14px var(--warn-glow), var(--shadow-inset-hairline);
+	backdrop-filter: blur(var(--blur-glass-sm)) saturate(var(--saturate-glass));
+	-webkit-backdrop-filter: blur(var(--blur-glass-sm)) saturate(var(--saturate-glass));
+}
+
+/* ľavá akcentová hrana: okamžite čitateľná trieda stavu */
+.write-banner::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 3px;
+	background: linear-gradient(180deg, var(--warn), color-mix(in srgb, var(--warn) 30%, transparent));
+}
+
+.write-banner a {
+	color: color-mix(in srgb, var(--warn) 70%, var(--text-1));
+	text-decoration-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+
+.write-banner a:hover {
+	color: var(--warn);
+}
+
+.write-banner-text {
+	flex: 1 1 320px;
+	min-width: 0;
+}
+
+.write-banner-reason,
+.write-banner-note {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	letter-spacing: 0.4px;
+	color: var(--text-muted);
+}
+
+.write-banner-close {
+	transition:
+		color var(--dur-fast) ease,
+		border-color var(--dur-fast) ease,
+		background var(--dur-fast) ease;
+}
+
+.write-banner-close:hover {
+	background: var(--warn-soft);
+}
+
+/* neznámy stav → info (aplikácia nič netvrdí o používáčovi) */
+.write-banner:has(.write-banner-note) {
+	border-color: color-mix(in srgb, var(--info) 55%, var(--glass-border));
+	color: color-mix(in srgb, var(--info) 80%, var(--text-1));
+	background:
+		radial-gradient(ellipse 70% 100% at 0% 0%, var(--info-soft) 0%, transparent 72%),
+		var(--glass-bg);
+	box-shadow: 0 0 26px -14px var(--info-glow), var(--shadow-inset-hairline);
+}
+
+.write-banner:has(.write-banner-note)::before {
+	background: linear-gradient(180deg, var(--info), color-mix(in srgb, var(--info) 30%, transparent));
+}
+
+.write-banner:has(.write-banner-note) a {
+	color: color-mix(in srgb, var(--info) 70%, var(--text-1));
+}
+
+.write-banner:has(.write-banner-note) .write-banner-close:hover {
+	color: var(--info);
+	border-color: var(--info);
+	background: var(--info-soft);
+}
+
+/* ak by niekedy banner niesol tone badge (register/admin to už robia) */
+.write-banner:has(.kind-badge.ok) {
+	border-color: color-mix(in srgb, var(--ok) 55%, var(--glass-border));
+	color: color-mix(in srgb, var(--ok) 82%, var(--text-1));
+}
+
+.write-banner:has(.kind-badge.ok)::before {
+	background: linear-gradient(180deg, var(--ok), color-mix(in srgb, var(--ok) 30%, transparent));
+}
+
+.write-banner:has(.kind-badge.error) {
+	border-color: color-mix(in srgb, var(--error) 60%, var(--glass-border));
+	color: color-mix(in srgb, var(--error) 85%, var(--text-1));
+	background:
+		radial-gradient(ellipse 70% 100% at 0% 0%, var(--error-soft) 0%, transparent 72%),
+		var(--glass-bg);
+}
+
+.write-banner:has(.kind-badge.error)::before {
+	background: linear-gradient(180deg, var(--error), color-mix(in srgb, var(--error) 30%, transparent));
+}
+
+/* ==========================================================================
+   11 — Filtre
+   ========================================================================== */
+.filter-bar {
+	gap: 12px 14px;
+	padding: 14px 16px;
+	margin-bottom: 20px;
+	border-radius: var(--radius-md);
+	border: 1px solid var(--glass-border);
+	background: var(--glass-bg);
+	backdrop-filter: blur(var(--blur-glass-sm)) saturate(var(--saturate-glass));
+	-webkit-backdrop-filter: blur(var(--blur-glass-sm)) saturate(var(--saturate-glass));
+	box-shadow: var(--shadow-2), var(--shadow-inset-hairline);
+}
+
+.filter-label {
+	font-family: var(--font-display);
+	font-size: 10px;
+	letter-spacing: 2.4px;
+	color: color-mix(in srgb, var(--text-muted) 85%, var(--secondary));
+}
+
+.filter-pill {
+	padding: 5px 13px;
+	font-size: var(--fs-xs);
+	background: var(--surface-sunken);
+	transition:
+		color var(--dur-fast) ease,
+		border-color var(--dur-fast) ease,
+		background var(--dur-fast) ease,
+		box-shadow var(--dur-fast) ease,
+		transform var(--dur-fast) var(--ease-pop);
+}
+
+.filter-pill:hover:not(:disabled) {
+	transform: translateY(-1px);
+}
+
+.filter-pill.active {
+	background: linear-gradient(135deg, var(--glass-bg-accent), var(--surface-accent));
+	box-shadow: var(--shadow-glow), inset 0 1px 0 color-mix(in srgb, #ffffff 18%, transparent);
+}
+
+/* ==========================================================================
+   12 — Tabuľky (admin: operátori)
+   ==========================================================================
+   Tabuľka má `class="event-card"` (z Phase 1b), takže `.event-card` ju
+   robí `display: block` → riadky sa rozpadnú na anonymné tabuľky.
+   `table.event-card` to vráti k tabuľkovému layoutu bez zmeny mark-upu. */
+table.event-card {
+	display: table;
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	padding: 0;
+	font-size: var(--fs-sm);
+	table-layout: fixed;
+}
+
+table.event-card caption {
+	padding: 14px 18px;
+	color: var(--text-muted);
+	font-size: var(--fs-xs);
+	text-align: left;
+}
+
+table.event-card thead th {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	padding: 13px 14px;
+	font-family: var(--font-display);
+	font-size: 10px;
+	letter-spacing: 2.2px;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	text-align: left;
+	white-space: nowrap;
+	background:
+		linear-gradient(180deg, var(--surface-2), var(--surface-1)),
+		var(--surface-3);
+	border-bottom: 1px solid var(--glass-hairline);
+	backdrop-filter: blur(var(--blur-glass-sm));
+	-webkit-backdrop-filter: blur(var(--blur-glass-sm));
+}
+
+table.event-card tbody td {
+	padding: 13px 14px;
+	border-bottom: 1px solid color-mix(in srgb, var(--glass-border) 65%, transparent);
+	color: var(--text-2);
+	vertical-align: middle;
+	overflow-wrap: anywhere;
+}
+
+table.event-card tbody td.event-meta {
+	display: table-cell;
+	padding: 13px 14px;
+	margin: 0;
+	border: 0;
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	color: var(--text-muted);
+}
+
+/* zebra + hover riadok (tm-607 `.data-table tbody tr:hover`) */
+table.event-card tbody tr {
+	transition: background var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+
+table.event-card tbody tr:nth-child(even) {
+	background: color-mix(in srgb, var(--glass-bg) 75%, transparent);
+}
+
+table.event-card tbody tr:hover {
+	background: var(--glass-bg-accent);
+	box-shadow: inset 3px 0 0 var(--primary);
+}
+
+table.event-card tbody tr:hover td {
+	color: var(--text-1);
+}
+
+table.event-card tfoot td {
+	padding: 12px 14px;
+	border-top: 1px solid var(--glass-hairline);
+	color: var(--text-muted);
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+}
+
+/* ==========================================================================
+   13 — Modály
+   ========================================================================== */
+.modal-backdrop {
+	background: color-mix(in srgb, var(--bg-0) 72%, transparent);
+	backdrop-filter: blur(var(--blur-glass)) saturate(var(--saturate-glass));
+	-webkit-backdrop-filter: blur(var(--blur-glass)) saturate(var(--saturate-glass));
+	animation: forum-fade-in var(--dur-med) var(--ease-soft);
+}
+
+.glass-modal {
+	padding: 24px;
+	border-radius: var(--radius-xl);
+	box-shadow: var(--shadow-5), var(--shadow-inset-hairline), 0 0 60px -30px var(--glow-primary);
+	animation: forum-pop-in var(--dur-med) var(--ease-pop);
+}
+
+.modal-head {
+	padding-bottom: 12px;
+	margin-bottom: 14px;
+	border-bottom: 1px solid var(--glass-border);
+}
+
+.modal-head h2,
+.modal-head h3 {
+	font-size: var(--fs-xl);
+	letter-spacing: 1.4px;
+}
+
+.modal-close {
+	width: 32px;
+	height: 32px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-border);
+	background: var(--glass-bg);
+	line-height: 1;
+	transition:
+		color var(--dur-fast) ease,
+		border-color var(--dur-fast) ease,
+		background var(--dur-fast) ease,
+		transform var(--dur-fast) var(--ease-pop);
+}
+
+.modal-close:hover {
+	background: var(--error-soft);
+	border-color: color-mix(in srgb, var(--error) 55%, var(--glass-border));
+	color: var(--error);
+	transform: rotate(90deg);
+}
+
+/* ==========================================================================
+   14 — Phase 3b hooky: prose (markdown), code, KaTeX, grafy, diagramy
+   ==========================================================================
+   `RichContent` tieto triedy ešte len pridá — tokeny (--chart-*,
+   --diagram-*, --prose-*) už existujú, takže 3b nepotrebuje do CSS
+   siahať, len použiť. */
+.prose {
+	max-width: var(--prose-max);
+	font-size: var(--fs-lg);
+	line-height: 1.75;
+	color: var(--text-2);
+}
+
+.prose>*+* {
+	margin-top: 1em;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+	margin: 1.6em 0 0.5em;
+	color: var(--text-1);
+}
+
+.prose h2 {
+	position: relative;
+	padding-bottom: 8px;
+	font-size: var(--fs-2xl);
+}
+
+.prose h2::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 64px;
+	height: 2px;
+	border-radius: var(--radius-pill);
+	background: linear-gradient(90deg, var(--primary), var(--secondary), transparent);
+}
+
+.prose a {
+	color: var(--prose-link);
+}
+
+.prose blockquote {
+	padding: 12px 18px;
+	border-left: 3px solid var(--secondary);
+	border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+	background: color-mix(in srgb, var(--secondary) 9%, transparent);
+	color: var(--text-2);
+	font-style: italic;
+}
+
+.prose ul,
+.prose ol {
+	padding-left: 1.4em;
+}
+
+.prose li+li {
+	margin-top: 0.35em;
+}
+
+.prose li::marker {
+	color: var(--secondary);
+}
+
+.prose hr {
+	height: 1px;
+	border: 0;
+	background: linear-gradient(90deg, transparent, var(--glass-hairline), transparent);
+}
+
+.prose :not(pre)>code {
+	padding: 2px 6px;
+	border-radius: 6px;
+	border: 1px solid var(--code-border);
+	background: var(--code-bg);
+	color: var(--code-fg);
+	font-size: 0.88em;
+}
+
+.prose pre,
+.code-block {
+	padding: 16px 18px;
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--code-border);
+	background: var(--code-bg);
+	color: var(--code-fg);
+	overflow-x: auto;
+	font-size: var(--fs-sm);
+	line-height: 1.6;
+	box-shadow: inset 0 1px 3px color-mix(in srgb, var(--bg-0) 40%, transparent);
+}
+
+/* audit 7.5 P1-2: tabuľka v proze bola „spreadsheet" (každá bunka v rámiku,
+   hranaté rohy). Stavaná podľa `table.event-card` = tm-607 dátovej tabuľky:
+   zaoblený vonkajší rám z --figure-*, len spodné linky riadkov, gradientová
+   hlavička Outfit 600 uppercase, hover riadok, numerické stĺpce mono. */
+.prose table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	border: 1px solid var(--figure-border);
+	border-radius: var(--figure-radius);
+	background: var(--figure-bg);
+	overflow: hidden;
+	font-size: var(--fs-sm);
+}
+
+.prose th,
+.prose td {
+	padding: 11px 14px;
+	border: 0;
+	text-align: left;
+	vertical-align: middle;
+	/* tabuľkové číslice aj bez triedy — sumy sa pri prepnutí netriasu */
+	font-variant-numeric: tabular-nums;
+}
+
+.prose th {
+	background:
+		linear-gradient(180deg, var(--surface-2), var(--surface-1)),
+		var(--figure-bg);
+	font-family: var(--font-display);
+	font-weight: 600;
+	font-size: 11px;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	border-bottom: 1px solid var(--glass-hairline);
+}
+
+.prose tbody td {
+	border-bottom: 1px solid color-mix(in srgb, var(--glass-border) 65%, transparent);
+	color: var(--text-2);
+}
+
+.prose tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+/* numerické stĺpce (GFM zarovnáva `---:` → `text-align: right`) — vzor
+   tm-607 `.table-amount`: Space Mono + tabular-nums */
+.prose td[style*="text-align: right"],
+.prose td[style*="text-align:right"] {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+}
+
+/* zebra + hover riadok (zhodné s `table.event-card`) */
+.prose tbody tr {
+	transition: background var(--dur-fast) ease;
+}
+
+.prose tbody tr:nth-child(even) {
+	background: color-mix(in srgb, var(--glass-bg) 75%, transparent);
+}
+
+.prose tbody tr:hover {
+	background: var(--glass-bg-accent);
+}
+
+.prose tbody tr:hover td {
+	color: var(--text-1);
+}
+
+/* KaTeX: fonty si balí 3b, farbu držíme cez token.
+   `rehype-katex` nahrádza math uzol výstupom KaTeX, preto sú skutočné
+   hooky `.katex-display` (blok) a `.katex` (inline); `.math-block` je
+   alias z dizajnu Q3 a `.math-inline`/`.math-display` držíme pre
+   prípadný ```math fence, ktorý by classes prežil. */
+.math-block,
+.math-display,
+.katex-display {
+	padding: 14px 8px;
+	overflow-x: auto;
+	color: var(--math-fg);
+	text-align: center;
+}
+
+.math-inline {
+	color: var(--math-fg);
+}
+
+.katex-error {
+	color: var(--error);
+}
+
+.katex {
+	color: var(--math-fg);
+}
+
+/* audit 7.5 P1-1: graf, diagram, obrázok aj rovnica zdieľajú JEDEN
+   sklenený rám (--figure-*) — nie jeden-off dosky. Vnútro je SVG/foto na
+   transparent, drop shadow --shadow-2 padá preč (na skle pôsobil ako diera). */
+.chart-block,
+.mermaid-block,
+.figure-block {
+	position: relative;
+	padding: 18px;
+	border-radius: var(--figure-radius);
+	border: 1px solid var(--figure-border);
+	background: var(--figure-bg);
+	box-shadow: var(--figure-shadow);
+	overflow-x: auto;
+}
+
+/* 1px sklenený highlight cez vrchol — rovnaký jazyk ako .glass-card::before */
+.chart-block::before,
+.mermaid-block::before,
+.figure-block::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, var(--glass-hairline), transparent);
+	pointer-events: none;
+}
+
+.chart-block svg,
+.mermaid-block svg {
+	max-width: 100%;
+	height: auto;
+}
+
+/* audit 7.5 P1-3: tyče ako `.progress-fill` — gradient z rendereru
+   (stop-color:var(--chart-N)/--chart-N-end), sklon + glow odtiaľto.
+   `rx`/`ry` geometrické CSS prepíšu atribút; renderer necháva aj
+   rx=6 atribút pre Safari, ktoré geometrické CSS nepodporuje. */
+.chart-block rect[data-bar] {
+	rx: var(--chart-bar-radius);
+	ry: var(--chart-bar-radius);
+	filter: var(--chart-bar-glow);
+}
+
+/* audit 7.5 P1-4: uzly mermaid diagramov — zaoblené rohy a glow uzla
+   (v glass-light je glow `none`, v nexaverse neonový žiar). */
+.mermaid-block .node rect,
+.mermaid-block .node .label-container {
+	rx: var(--diagram-node-radius);
+	ry: var(--diagram-node-radius);
+}
+
+.mermaid-block .node {
+	filter: var(--diagram-node-glow);
+}
+
+.mermaid-block .nodeLabel {
+	font-family: var(--font-body);
+	font-weight: 500;
+}
+
+/* audit 7.5 P2-1: popisky obrázkov/grafov/rovníc nie sú display font —
+   tm-607 ich píše Outfitom (body) v --fs-sm s lining/tabular číslicami;
+   wide-spaced uppercase ostáva len pre sekčné labely (AUTHORS, ABSTRACT) */
+.figure-caption,
+.chart-caption {
+	margin-top: 10px;
+	font-family: var(--font-body);
+	font-size: var(--fs-sm);
+	letter-spacing: 0.3px;
+	font-variant-numeric: lining-nums tabular-nums;
+	color: var(--text-muted);
+	text-align: center;
+}
+
+.chart-error {
+	padding: 14px 16px;
+	border: 1px dashed color-mix(in srgb, var(--error) 60%, var(--glass-border));
+	border-radius: var(--radius-sm);
+	background: var(--error-soft);
+	color: var(--error);
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	white-space: pre-wrap;
+}
+
+/* chybový box nesie zdroj v <details> — summary je ovládateľný, zdroj
+   sa scrolluje (dlhý mermaid sourcesmok nezatlačí stránku) */
+.chart-error summary {
+	cursor: pointer;
+	margin-top: 8px;
+	text-decoration: underline dotted;
+}
+
+.chart-error pre {
+	margin: 8px 0 0;
+	max-height: 22em;
+	overflow: auto;
+	padding: 10px 12px;
+	border-radius: var(--radius-sm);
+	background: var(--surface-sunken);
+	color: var(--text-2);
+	font-size: var(--fs-xs);
+}
+
+/* figure = rám + popisek; vnútorný blok už rám nepotrebuje (inak by
+   bol rám v ráme a popisek odtrhnutý od grafu) — highlight linka likewise */
+.figure-block>.chart-block,
+.figure-block>.mermaid-block {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+.figure-block>.chart-block::before,
+.figure-block>.mermaid-block::before {
+	content: none;
+}
+
+/* RichContent v `.event-body`: markdown si láme slová sám, preto
+   prepisujeme plain-text clamp z app.css (max-height + mask gradient
+   by urezali grafy a tabuľky uprostred) */
+.event-body.prose {
+	max-height: none;
+	overflow: visible;
+	white-space: normal;
+	-webkit-mask-image: none;
+	mask-image: none;
+}
+
+/* toolbar + napoveda formátovania v composeri (Phase 3b) */
+.composer-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.composer-toolbar .ghost-btn {
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	letter-spacing: 0.6px;
+	padding: 6px 12px;
+}
+
+.composer-help {
+	margin-top: 10px;
+	font-size: var(--fs-sm);
+	color: var(--text-muted);
+}
+
+.composer-help summary {
+	cursor: pointer;
+	font-family: var(--font-display);
+	font-size: var(--fs-xs);
+	letter-spacing: 1.2px;
+	text-transform: uppercase;
+}
+
+.composer-help-body {
+	margin-top: 8px;
+	padding: 12px 14px;
+	border-left: 2px solid var(--glass-border);
+	background: var(--surface-sunken);
+	border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+	white-space: pre-line;
+	line-height: 1.6;
+}
+
+/* ==========================================================================
+   15 — Keyframes
+   ========================================================================== */
+@keyframes forum-shimmer {
+	0% {
+		transform: translateX(-100%);
+	}
+
+	60%,
+	100% {
+		transform: translateX(100%);
+	}
+}
+
+@keyframes forum-fade-in {
+	from {
+		opacity: 0;
+	}
+
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes forum-pop-in {
+	from {
+		opacity: 0;
+		transform: translateY(12px) scale(0.985);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+/* ==========================================================================
+   14 — PAPIERE (Phase 4b): PaperPage, PaperBoard, PaperEditor
+   ==========================================================================
+   Papier je dlhý dokument v `.prose`; dizajn drží čitateľnú mierku riadka,
+   číslované popisky (`.table-caption`, `.equation-number`) a odkazy do
+   Referencií. Tlač je v `base.css` (@media print). */
+
+.paper-board .page-head {
+	align-items: flex-start;
+}
+
+.paper-filter-bar {
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.paper-list {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	margin-top: 14px;
+}
+
+.paper-card h3 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	font-family: var(--font-display);
+	letter-spacing: 0.6px;
+	line-height: 1.35;
+}
+
+.paper-card-authors {
+	margin: 6px 0 0;
+	font-size: var(--fs-sm);
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.paper-card-abstract {
+	margin: 10px 0 12px;
+	color: var(--text-2);
+	line-height: 1.65;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.paper-card-size,
+.paper-card-date {
+	color: var(--text-dim);
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	letter-spacing: 0.4px;
+}
+
+/* ── PaperPage ─────────────────────────────────────────────────────────── */
+
+/* audit 7.5 P3: papier je dokument, nie karta v feede — hover zdvih
+   (dedený z .glass-card) ho nepatrí */
+.paper-page {
+	padding: 34px clamp(18px, 4vw, 46px);
+}
+
+.paper-page:hover {
+	transform: none;
+}
+
+.paper-title {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	flex-wrap: wrap;
+	font-family: var(--font-display);
+	font-size: clamp(24px, 3.4vw, 38px);
+	line-height: 1.22;
+	letter-spacing: 0.4px;
+	margin: 0 0 10px;
+}
+
+.paper-meta {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	font-size: var(--fs-sm);
+	color: var(--text-muted);
+}
+
+.paper-meta code {
+	font-size: var(--fs-xs);
+	color: var(--text-dim);
+}
+
+.paper-authors {
+	margin: 22px 0 0;
+}
+
+.paper-authors h2,
+.paper-abstract h2,
+.paper-references h2 {
+	font-family: var(--font-display);
+	font-size: var(--fs-sm);
+	letter-spacing: 2.2px;
+	text-transform: uppercase;
+	color: color-mix(in srgb, var(--text-muted) 85%, var(--primary));
+	margin: 0 0 8px;
+}
+
+.author-list {
+	margin: 0;
+	padding-left: 22px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	color: var(--text-2);
+	line-height: 1.6;
+}
+
+.author-affiliation {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.author-orcid {
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+
+/* spoluautor: 1054 VOUCH od toho istého pubkey = potvrdené, inak
+   NEUTRÁLNY štítek (nikdy netvrdíme viac, než dáta vedia) */
+.coauthor-badge {
+	margin-left: 8px;
+	padding: 2px 9px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--glass-border);
+	background: var(--surface-1);
+	color: var(--text-muted);
+	font-family: var(--font-display);
+	font-size: 10px;
+	letter-spacing: 1.6px;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.coauthor-badge.confirmed {
+	border-color: color-mix(in srgb, var(--ok) 55%, var(--glass-border));
+	background: color-mix(in srgb, var(--ok) 14%, transparent);
+	color: var(--ok);
+}
+
+/* audit 7.5 P3: abstrakt — akcentovú hranu nerýsuje zakrivený border
+   (radius ju „ohýbal"), ale rovný pruh inset tieňa */
+.paper-abstract {
+	margin: 22px 0 0;
+	padding: 16px 18px;
+	border-radius: var(--radius-sm);
+	background: var(--surface-1);
+	box-shadow: inset 3px 0 0 color-mix(in srgb, var(--primary) 55%, transparent);
+}
+
+.paper-abstract p {
+	margin: 0;
+	line-height: 1.7;
+	color: var(--text-2);
+}
+
+.paper-topics {
+	margin: 16px 0 0;
+}
+
+/* lint banner: copy je locale veta podľa kódu, nie veta gatewaya */
+.paper-lint-banner {
+	margin: 18px 0 0;
+	padding: 12px 16px;
+	border: 1px dashed color-mix(in srgb, var(--warn) 55%, var(--glass-border));
+	border-radius: var(--radius-sm);
+	background: var(--warn-soft);
+	color: var(--text-2);
+	font-size: var(--fs-sm);
+}
+
+.paper-lint-banner strong {
+	display: block;
+	font-family: var(--font-display);
+	font-size: var(--fs-xs);
+	letter-spacing: 1.8px;
+	text-transform: uppercase;
+	color: var(--warn);
+	margin-bottom: 4px;
+}
+
+.paper-lint-banner ul {
+	margin: 0 0 8px;
+	padding-left: 20px;
+}
+
+.paper-actions {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin: 20px 0 4px;
+}
+
+.paper-body {
+	margin-top: 18px;
+}
+
+/* audit 7.5 P2-4 (ragged right): `.prose { max-width: 74ch }` obmedzovalo
+   aj šírku blokov, ktoré majú ísť do celej šírky (graf, tabuľka, obrázok) —
+   telo končilo ~45 px pred abstraktom a referenciami. Limit 74ch patrí na
+   textové uzly, blokové prvky idú do plnej šírky. */
+.paper-body .prose {
+	max-width: none;
+}
+
+.paper-body .prose p,
+.paper-body .prose ul,
+.paper-body .prose ol,
+.paper-body .prose blockquote,
+.paper-body .prose h1,
+.paper-body .prose h2,
+.paper-body .prose h3,
+.paper-body .prose h4 {
+	max-width: var(--prose-max);
+}
+
+/* audit 7.5 P2-3: rytmus blokov v tele papiera je 24px (šablóna), nie
+   12–18px; `.prose>*+* { margin-top: 1em }` tu prepisujeme */
+.paper-body .prose .figure-block,
+.paper-body .prose .chart-block,
+.paper-body .prose .mermaid-block,
+.paper-body .prose .equation-block,
+.paper-body .prose table {
+	margin-top: 24px;
+	margin-bottom: 24px;
+}
+
+/* popisek patrí k tabuľke (8px), 28px nad ním je odstup OD predchádzajúceho
+   bloku — susedné marginy sa scollujú, takže tabuľka za popiskom nesmie
+   dostať vlastných 24px (inak by sa popisek od tabuľky odtrhol) */
+.paper-body .prose .table-caption+table {
+	margin-top: 8px;
+}
+
+/* ── číslované popisky a rovnice (paper mód RichContent) ───────────────── */
+
+/* audit 7.5 P2-1 + P2-2: popisk tabuľky je Outfit --fs-sm s tabular
+   číslicami a sedí 28px nad tabuľkou — 18px po Figure 1 ho robilo
+   súčasťou obrázka. Uppercase wide-spaced tu nie je, to je reč len
+   pre sekčné labely. */
+.table-caption {
+	margin: 28px 0 8px;
+	font-family: var(--font-body);
+	font-size: var(--fs-sm);
+	letter-spacing: 0.3px;
+	font-variant-numeric: lining-nums tabular-nums;
+	color: var(--text-muted);
+	text-align: center;
+}
+
+/* audit 7.5 P1-1: rovnica dostáva ten istý sklenený rám ako obrázky
+   (--figure-*), padding 14px 18px; P2-3: 24px rytmus okolo bloku.
+   Vnútorný padding `.katex-display` tu padá preč — rám už polohu
+   vyriešil sám. */
+.equation-block {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 18px;
+	margin: 24px 0;
+	padding: 14px 18px;
+	border: 1px solid var(--figure-border);
+	border-radius: var(--figure-radius);
+	background: var(--figure-bg);
+	box-shadow: var(--figure-shadow);
+	overflow-x: auto;
+}
+
+.equation-block .katex-display {
+	padding: 0;
+	margin: 0;
+}
+
+.equation-body {
+	flex: 1 1 auto;
+	text-align: center;
+	color: var(--math-fg);
+}
+
+/* audit 7.5 P3: číslo rovnice oddeľuje tenká linka (inak splýva s TeXom) */
+.equation-number {
+	flex: 0 0 auto;
+	padding-left: 14px;
+	border-left: 1px solid color-mix(in srgb, var(--glass-border) 70%, transparent);
+	font-family: var(--font-mono);
+	font-size: var(--fs-sm);
+	color: var(--text-muted);
+}
+
+.xref {
+	color: var(--text-1);
+	text-decoration: underline dotted color-mix(in srgb, var(--primary) 65%, transparent);
+	text-underline-offset: 3px;
+}
+
+/* nevyriešený krížový odkaz / citácia: viditeľný marker, nie tichá strata */
+.xref-unknown {
+	padding: 1px 6px;
+	border-radius: var(--radius-xs);
+	border: 1px dashed color-mix(in srgb, var(--error) 60%, var(--glass-border));
+	background: var(--error-soft);
+	color: var(--error);
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+}
+
+sup.citation {
+	font-size: 0.72em;
+	line-height: 0;
+}
+
+/* audit 7.5 P2-5: citácia nie je alert — --accent (korála) je tm-607
+   alert farba a [1] v nej vyzeralo ako chyba; ide po --cite-fg */
+sup.citation a {
+	color: var(--cite-fg);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+sup.citation a:hover {
+	text-decoration: underline;
+}
+
+/* ── References ────────────────────────────────────────────────────────── */
+
+.paper-references {
+	margin: 30px 0 0;
+	padding-top: 18px;
+	border-top: 1px solid var(--glass-border);
+}
+
+.reference-list {
+	margin: 0;
+	padding-left: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	color: var(--text-2);
+	line-height: 1.65;
+	font-size: var(--fs-sm);
+}
+
+.reference-num {
+	font-family: var(--font-mono);
+	color: var(--text-muted);
+}
+
+.reference-backlink {
+	font-size: var(--fs-xs);
+	color: var(--text-muted);
+	text-decoration: underline dotted;
+}
+
+.paper-references-empty {
+	color: var(--text-muted);
+	font-size: var(--fs-sm);
+}
+
+/* ── PaperEditor ───────────────────────────────────────────────────────── */
+
+.paper-editor-form {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 26px clamp(16px, 3vw, 34px);
+	margin-top: 16px;
+}
+
+.paper-editor-signin {
+	margin-top: 16px;
+	padding: 18px;
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-wrap: wrap;
+	color: var(--text-2);
+}
+
+.field-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	gap: 14px;
+}
+
+.author-group {
+	gap: 10px;
+}
+
+.author-fields {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 8px;
+	align-items: center;
+}
+
+.field-hint {
+	margin: 0;
+	font-size: var(--fs-xs);
+	color: var(--text-muted);
+	line-height: 1.55;
+}
+
+.field-hint.field-error {
+	color: var(--error);
+}
+
+.paper-body-input {
+	min-height: 340px !important;
+	font-family: var(--font-mono);
+	font-size: var(--fs-sm);
+	line-height: 1.6;
+}
+
+.editor-lint {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font-size: var(--fs-sm);
+	color: var(--text-muted);
+}
+
+.editor-lint ul {
+	margin: 4px 0 0;
+	padding-left: 20px;
+}
+
+.editor-lint strong {
+	font-family: var(--font-display);
+	font-size: var(--fs-xs);
+	letter-spacing: 1.6px;
+	text-transform: uppercase;
+}
+
+.editor-lint [data-testid='lint-errors'] strong {
+	color: var(--error);
+}
+
+.editor-lint [data-testid='lint-warnings'] strong {
+	color: var(--warn);
+}
+
+.lint-clean {
+	color: var(--ok);
+}
+
+.editor-actions {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+	align-items: center;
+}

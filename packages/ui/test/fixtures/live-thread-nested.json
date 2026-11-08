@@ -1,0 +1,77 @@
+{
+ "_meta": {
+  "source": "http://127.0.0.1:18081",
+  "fetched_at": "2026-10-29 10:35 UTC",
+  "task": "F4AI-18 (S12)"
+ },
+ "root": {
+  "id": "e49c1e5a1aef7d536c4c48ade192146a1b32e17c73728681ab11b67b00e604ea",
+  "pubkey": "7728a35a2ffceb8e720ae10bf9d64ee4ca66299396f6fcbdda91fa393062dae7",
+  "created_at": 1793268842,
+  "kind": 1020,
+  "tags": [
+   [
+    "a",
+    "30020:7728a35a2ffceb8e720ae10bf9d64ee4ca66299396f6fcbdda91fa393062dae7:f4ai11-koren-1793268838821"
+   ]
+  ],
+  "content": "otazka 1",
+  "sig": "3d732921d203cd531c27fa16f7b3631e3705c06ad6eee69d5e051381b734442770306c67c2ee8a1f8c6a3f24e32eaf4ad518cae91c9b741217713b9f458824d2"
+ },
+ "replies": [
+  {
+   "id": "f7f528d44461c75bce68334517fee0b44eba4568975422112f1334b0705f0746",
+   "pubkey": "7728a35a2ffceb8e720ae10bf9d64ee4ca66299396f6fcbdda91fa393062dae7",
+   "created_at": 1793268844,
+   "kind": 1023,
+   "tags": [
+    [
+     "e",
+     "e49c1e5a1aef7d536c4c48ade192146a1b32e17c73728681ab11b67b00e604ea",
+     "root"
+    ]
+   ],
+   "content": "odpoved 1",
+   "sig": "de13e5130c320101bac7015ad5cf549df2c9d94b35361cbfea91cba843ee699bc9fd1c2e4644de5bb443aa3a450b006d4983adced9d22691cc8e7960f4173cee",
+   "parent": "e49c1e5a1aef7d536c4c48ade192146a1b32e17c73728681ab11b67b00e604ea",
+   "children": [
+    {
+     "id": "3c719c5630c4a3afdd8f236f07dd7caa37f63629c613bbd367a2266781e7f254",
+     "pubkey": "7728a35a2ffceb8e720ae10bf9d64ee4ca66299396f6fcbdda91fa393062dae7",
+     "created_at": 1793268845,
+     "kind": 1023,
+     "tags": [
+      [
+       "e",
+       "e49c1e5a1aef7d536c4c48ade192146a1b32e17c73728681ab11b67b00e604ea",
+       "root"
+      ],
+      [
+       "e",
+       "f7f528d44461c75bce68334517fee0b44eba4568975422112f1334b0705f0746",
+       "parent"
+      ]
+     ],
+     "content": "odpoved 2 pod odpoved 1",
+     "sig": "bd0789c56da4becaf659a57194ff9236756e285ce17a92064b8690b502a52b59467dc8b60f3ef317f1b678b19c725d68ae0bcea3bca414f53bdfcb3bdf510ce5",
+     "parent": "f7f528d44461c75bce68334517fee0b44eba4568975422112f1334b0705f0746",
+     "children": []
+    }
+   ]
+  }
+ ],
+ "reply_count": 2,
+ "rating": {
+  "count": 0,
+  "mean": 0,
+  "mean15": 0,
+  "n_eff": 0,
+  "wilson": 0,
+  "weightTotal": 0,
+  "weightRaw": 0,
+  "epoch": null,
+  "accepted": false,
+  "accepted_count": 0
+ },
+ "issues": []
+}

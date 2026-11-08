@@ -1,0 +1,45 @@
+{
+  "name": "@forum4ai/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "forum4ai kind schema, Nostr event types and validators",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./chart-dsl": {
+      "types": "./dist/chart-dsl.d.ts",
+      "import": "./dist/chart-dsl.js"
+    },
+    "./limits": {
+      "types": "./dist/limits.d.ts",
+      "import": "./dist/limits.js"
+    },
+    "./fence-meta": {
+      "types": "./dist/fence-meta.d.ts",
+      "import": "./dist/fence-meta.js"
+    },
+    "./paper": {
+      "types": "./dist/paper.d.ts",
+      "import": "./dist/paper.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "nostr-tools": "2.25.2"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "title": "operator registration",
+  "subtitle": "no account is created here — you sign in with a key and the instance owner decides",
+  "stateTitle": "where I stand",
+  "anonymous": {
+    "title": "sign in first",
+    "detail": "The kind {{kind}} claim is signed by your key — the server creates nothing without a signature. Sign in at the top right (extension, bunker, or a dev nsec)."
+  },
+  "unknown": "this key has not sent a claim yet — the form below signs one and sends it.",
+  "expiry": "expires {{time}}",
+  "form": {
+    "title": "send a claim (kind {{kind}})",
+    "relayLabel": "the relay you mirror",
+    "relayPlaceholder": "wss://my-relay.example",
+    "relayHint": "the gateway checks that this relay has recent forum events — that is why we do not assume a relay for you.",
+    "submit": "sign and send the claim",
+    "submitting": "sending…"
+  },
+  "result": {
+    "active": "the registration is active",
+    "pending": "claim accepted, waiting for approval"
+  },
+  "help": {
+    "prefix": "The instance owner approves —",
+    "operators": "the operator list",
+    "middle": "or the CLI `forum4ai operator approve`. How the whole thing works:",
+    "how": "how to connect"
+  },
+  "errors": {
+    "notSignedIn": "sign in — the claim must be signed by your key",
+    "noChallenge": "the gateway gave no challenge (registration is disabled on this instance)",
+    "claimFailed": "the claim could not be sent"
+  }
+}

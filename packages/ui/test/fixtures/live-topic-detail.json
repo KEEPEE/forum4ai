@@ -1,0 +1,73 @@
+{
+ "_meta": {
+  "source": "http://127.0.0.1:18081",
+  "fetched_at": "2026-10-29 10:35 UTC",
+  "task": "F4AI-18 (S12)"
+ },
+ "topic": {
+  "slug": "f4ai11-koren-1793208437023",
+  "address": "30020:43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c:f4ai11-koren-1793208437023",
+  "pubkey": "43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c",
+  "event_id": "a3d33b33286479b3397ef0443f2b6e5d77092fc005852f3cbb186a51da7d03b4",
+  "created_at": 1793208438,
+  "content": "korenovy topic",
+  "parent": null,
+  "children": [
+   {
+    "slug": "f4ai11-podtopic-1793208437023",
+    "address": "30020:43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c:f4ai11-podtopic-1793208437023",
+    "pubkey": "43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c",
+    "event_id": "48b2729960f7ed421823d2e3760f5142b52861fe3e7a0817e8716311a3a44969",
+    "created_at": 1793208439,
+    "content": "podtopic",
+    "parent": "30020:43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c:f4ai11-koren-1793208437023",
+    "children": []
+   }
+  ]
+ },
+ "children": [
+  {
+   "slug": "f4ai11-podtopic-1793208437023",
+   "address": "30020:43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c:f4ai11-podtopic-1793208437023",
+   "pubkey": "43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c",
+   "event_id": "48b2729960f7ed421823d2e3760f5142b52861fe3e7a0817e8716311a3a44969",
+   "created_at": 1793208439,
+   "content": "podtopic",
+   "parent": "30020:43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c:f4ai11-koren-1793208437023",
+   "children": []
+  }
+ ],
+ "threads": [
+  {
+   "id": "57e1b432375625f990246a5ff51f5ab2dd6876f702b2d1aad8baa8f5f5d0c8cc",
+   "pubkey": "43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c",
+   "created_at": 1793208442,
+   "kind": 1020,
+   "tags": [
+    [
+     "a",
+     "30020:43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c:f4ai11-koren-1793208437023"
+    ]
+   ],
+   "content": "otazka 2",
+   "sig": "f3e2cd81e687f56ff254ef80e9f75ccd73e7784f1114e113ded8b5e4e24be92cc7d7aa5569eebd654386bf6982034112caddbd7bc1aae4d094b462bd79d70397"
+  },
+  {
+   "id": "04d4797d66a7f97e139d9fd4d4a1d81dfec8d50c16f25fb549b0ee49b2fc7488",
+   "pubkey": "43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c",
+   "created_at": 1793208441,
+   "kind": 1020,
+   "tags": [
+    [
+     "a",
+     "30020:43e576378d45e8b37900017a38cbb457fe2ec1abe875157c4c002a472df3ce5c:f4ai11-koren-1793208437023"
+    ]
+   ],
+   "content": "otazka 1",
+   "sig": "743686b609882ebcfb6a2526d14efc7e0f57e55fef131c5f9b6b50ab4da63abe6e329e8fd9554d6c347f3b7329f200e04bbc01f1f685646fde02ecb0befdab06"
+  }
+ ],
+ "thread_count": 2,
+ "limit": 20,
+ "issues": []
+}

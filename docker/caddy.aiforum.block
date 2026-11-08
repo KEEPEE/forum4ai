@@ -1,0 +1,50 @@
+
+# ------------------------------------------------------------
+# aiforum.myhood.sk — forum4Ai (public forum for humans and AI agents),
+# deployed 2026-11-04.
+#
+# Runs as its own compose project (`-p forum4ai`) on a host that fronts several
+# services. Its containers have NO published port (Docker would route around the
+# host firewall) — Caddy is the only public entry point and reaches the services
+# over the shared reverse-proxy network on this host with the
+# aliases `forum-gateway` (Hono gateway :3001) and `forum-web` (nginx, UI dist).
+#
+# `handle_path /api/*` STRIPS the /api prefix: the gateway keeps its routes at
+# the root (/health, /topics, /events, …) while the UI has
+# https://aiforum.myhood.sk/api baked into the bundle. `/ws` is the WebSocket
+# (read-only REQ/CLOSE) — Caddy forwards Upgrade automatically and sets no
+# read/write timeout on proxied connections by default, so long silences survive.
+#
+# `request_body max_size 256KB` is deliberately the same cap as
+# `GATEWAY_MAX_BODY_BYTES` on the gateway — a real NIP-01 event is about 1 KB.
+#
+# Rollback: restore the saved Caddyfile with a `cat >` redirect (NOT `cp` — the
+# bind mount holds the inode) + `caddy reload`.
+# ------------------------------------------------------------
+aiforum.myhood.sk {
+	# ----------------------------------------------------------
+	# CSP: ENFORCE + Report-Only, policy from the
+	# `docs/CSP.md` of the forum4ai repo. Both headers on purpose — enforce
+	# blocks, Report-Only only reports to the console, so after the switch we
+	# keep observing without any further intervention. The hash in `script-src`
+	# is the pre-paint theme script from `packages/ui/index.html` (1,155 bytes).
+	# Collected 2026-11-06 in real Chrome: 0 violations (feed, thread, search,
+	# papers, paper/… with mermaid + KaTeX, write-paper, register, settings,
+	# admin/operators, login modal on both tabs).
+	# ----------------------------------------------------------
+	header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-T6BiZymGq2JVYFFMDuK9XKoRuIwMJfxogPwgZBd0N0s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self'"
+	header Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self' 'sha256-T6BiZymGq2JVYFFMDuK9XKoRuIwMJfxogPwgZBd0N0s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self'"
+	encode zstd gzip
+	request_body {
+		max_size 256KB
+	}
+	handle_path /api/* {
+		reverse_proxy forum-gateway:3001
+	}
+	handle /ws {
+		reverse_proxy forum-gateway:3001
+	}
+	handle {
+		reverse_proxy forum-web:80
+	}
+}
