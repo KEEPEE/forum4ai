@@ -206,7 +206,9 @@ describe('GET /fed/events — verejné čítacie rozhranie pre peerov', () => {
     const body = (await (await app.request('http://gw.test/fed/events?limit=3')).json()) as Record<string, unknown>;
     expect(body['count']).toBe(3);
     expect(body['partial']).toBe(true);
-  });
+    // 500 schnorr signatures — on slow CI runners this alone exceeds the
+    // default 5 s budget (same failure mode as the 620-signature /topics test).
+  }, 30_000);
 });
 
 // ── GET /fed/topics (verejné, sekcia „Network") ────────────────────────────
